@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Twitter Bot Control{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Бічна панель навігації -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fas fa-robot"></i> Twitter Bot</h2>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <a href="/dashboard" class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Головна панель</span>
+            </a>
+            
+            <a href="/accounts" class="nav-item {% if request.endpoint == 'accounts' %}active{% endif %}">
+                <i class="fas fa-users"></i>
+                <span>Акаунти</span>
+            </a>
+            
+            <a href="/shilling" class="nav-item {% if request.endpoint == 'shilling_page' %}active{% endif %}">
+                <i class="fas fa-rocket"></i>
+                <span>Шилінг</span>
+            </a>
+            
+            <a href="/settings" class="nav-item {% if request.endpoint == 'settings' %}active{% endif %}">
+                <i class="fas fa-cog"></i>
+                <span>Налаштування</span>
+            </a>
+            
+            <a href="/logs" class="nav-item {% if request.endpoint == 'logs' %}active{% endif %}">
+                <i class="fas fa-list-alt"></i>
+                <span>Логи</span>
+            </a>
+        </nav>
+        
+        <div class="sidebar-footer">
+            <a href="/logout" class="nav-item logout">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Вихід</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Основний контент -->
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <button class="sidebar-toggle" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1>{% block page_title %}Twitter Bot Control{% endblock %}</h1>
+            </div>
+            
+            <div class="header-right">
+                <div class="system-status" id="system-status">
+                    <span class="status-indicator" id="status-indicator"></span>
+                    <span class="status-text" id="status-text">Перевіряю...</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- Мобільне меню -->
+    <div class="mobile-menu" id="mobile-menu">
+        <div class="mobile-menu-header">
+            <h3>Twitter Bot</h3>
+            <button onclick="closeMobileMenu()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <nav class="mobile-nav">
+            <a href="/dashboard" onclick="closeMobileMenu()">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Головна панель</span>
+            </a>
+            
+            <a href="/accounts" onclick="closeMobileMenu()">
+                <i class="fas fa-users"></i>
+                <span>Акаунти</span>
+            </a>
+            
+            <a href="/shilling" onclick="closeMobileMenu()">
+                <i class="fas fa-rocket"></i>
+                <span>Шилінг</span>
+            </a>
+            
+            <a href="/settings" onclick="closeMobileMenu()">
+                <i class="fas fa-cog"></i>
+                <span>Налаштування</span>
+            </a>
+            
+            <a href="/logs" onclick="closeMobileMenu()">
+                <i class="fas fa-list-alt"></i>
+                <span>Логи</span>
+            </a>
+            
+            <a href="/logout" onclick="closeMobileMenu()">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Вихід</span>
+            </a>
+        </nav>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

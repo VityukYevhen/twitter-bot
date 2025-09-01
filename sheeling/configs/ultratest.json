@@ -1,0 +1,116 @@
+{
+  "group_name": "UltraTest",
+  "accounts_google_sheet": "https://docs.google.com/spreadsheets/d/1lw5BxZoX3dxeZRLm7jqs6e9u8CtZNHbjcsZclBT9lH8/edit?gid=0#gid=0",
+  "logs_google_sheet": "https://docs.google.com/spreadsheets/d/1cUkYCb-0k-czjYysnEAjvUbtA87R_MxAUND1OAWiV64/edit?usp=sharing",
+  "delays": {
+    "between_actions": {
+      "min": 5,
+      "max": 15
+    },
+    "between_likes": {
+      "min": 2,
+      "max": 5
+    },
+    "between_retweets": {
+      "min": 2,
+      "max": 5
+    },
+    "between_comments": {
+      "min": 2,
+      "max": 10
+    },
+    "between_posts": {
+      "min": 10,
+      "max": 15
+    }
+  },
+  "actions_per_run": {
+    "likes": {
+      "min": 5,
+      "max": 10
+    },
+    "retweets": {
+      "min": 2,
+      "max": 7
+    },
+    "comments": {
+      "min": 2,
+      "max": 6
+    },
+    "posts": {
+      "min": 1,
+      "max": 1
+    }
+  },
+  "search_keywords": [
+    "Crypto",
+    "Crypto world",
+    "Money",
+    "Crypto News",
+    "Mining"
+  ],
+  "post_topics": [
+    "Mining",
+    "Crypto",
+    "BTC",
+    "Fundingw"
+  ],
+  "exclude_keywords": [],
+  "max_search_results": 50,
+  "search_delay": {
+    "min": 5,
+    "max": 15
+  },
+  "max_actions_per_hour": 20,
+  "max_actions_per_day": 100,
+  "avoid_same_accounts": true,
+  "randomize_timing": true,
+  "use_proxy_rotation": false,
+  "log_all_actions": true,
+  "log_errors": true,
+  "log_success_rate": true,
+  "save_screenshots": false,
+  "use_images": false,
+  "images_folder": "https://drive.google.com/drive/folders/1CFf8OiMhPU_9SDrtMBrNYX3ddJj3NWj5?usp=sharing",
+  "search_format": "twitter_search",
+  "min_followers": 100,
+  "min_likes": 5,
+  "min_reposts": 2,
+  "min_replies": 1,
+  "search_hours": 168,
+  "key_phrases": [],
+  "comments_total_limit": 2000,
+  "comments_daily_limit": 100,
+  "comments_hourly_limit": 10,
+  "comments_per_post": {
+    "min": 1,
+    "max": 1
+  },
+  "comment_interval": {
+    "min": 15,
+    "max": 30
+  },
+  "comment_engagement": {
+    "likes": {
+      "min": 1,
+      "max": 3
+    },
+    "reposts": {
+      "min": 2,
+      "max": 5
+    },
+    "views": {
+      "min": 55,
+      "max": 100
+    }
+  },
+  "comment_prompt": "Crypto news and main comment combination",
+  "use_reposts": true,
+  "repost_percentage": 75,
+  "repost_prompt": "Crypto money and new ideas of mining",
+  "use_posts": true,
+  "post_percentage": 75,
+  "post_prompt": "Interesting post about Crypto",
+  "created_at": "2025-08-29T19:43:16.106493",
+  "updated_at": "2025-08-29T19:43:16.106506"
+}

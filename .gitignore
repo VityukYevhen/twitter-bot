@@ -1,0 +1,14 @@
+.DS_Store
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.log
+*.sqlite
+*.db
+settings.json
+accountsData.db
+comment_limits.json
+subscriptions.json
+images/

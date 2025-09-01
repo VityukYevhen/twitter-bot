@@ -1,0 +1,1141 @@
+{% extends "base.html" %}
+
+{% block title %}Головна панель - Twitter Bot Control{% endblock %}
+{% block page_title %}Головна панель{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Статистичні картки -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-content">
+                <h3>Акаунти (Good / New)</h3>
+                <div class="stat-number"><span id="good-accounts">-</span> / <span id="new-accounts">-</span></div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-layer-group"></i>
+            </div>
+            <div class="stat-content">
+                <h3>Активні групи</h3>
+                <div class="stat-number" id="running-groups">-</div>
+                <div class="stat-change">
+                    <span class="change-indicator neutral">0</span>
+                    <span class="change-text">змін</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="stat-content">
+                <h3>Дії сьогодні</h3>
+                <div class="stat-number" id="today-actions">-</div>
+                <div class="stat-change">
+                    <span class="change-indicator neutral">&nbsp;</span>
+                    <span class="change-text">сума за сьогодні</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-content">
+                <h3>Час роботи</h3>
+                <div class="stat-number" id="uptime">-</div>
+                <div class="stat-change">
+                    <span class="change-indicator neutral">-</span>
+                    <span class="change-text">стабільно</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Google Table URL Section -->
+    <div class="google-table-section">
+        <h2><i class="fas fa-table"></i> Налаштування Google таблиці</h2>
+        <div class="table-url-form">
+            <div class="url-input-group">
+                <label for="table-url">URL Google таблиці з аккаунтами:</label>
+                <div class="url-input-container">
+                    <input type="url" id="table-url" placeholder="https://docs.google.com/spreadsheets/d/..." disabled>
+                    <button class="btn btn-success save-url-btn" onclick="saveTableUrl()" disabled>
+                        <i class="fas fa-save"></i> Зберегти
+                    </button>
+                </div>
+                <small class="url-help">
+                    <span id="url-status-text">Введіть посилання на Google таблицю з аккаунтами для розігріву</span>
+                    <span id="url-locked-text" style="display: none; color: #ffc107;">
+                        <i class="fas fa-lock"></i> Налаштування заблоковані під час роботи скрипта прогріву
+                    </span>
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <div class="quick-actions">
+        <h2>Швидкі дії</h2>
+        <div class="actions-grid">
+            <button class="action-btn start-btn" onclick="startSystem()">
+                <i class="fas fa-play"></i>
+                <span>Запустити систему</span>
+            </button>
+            
+            <button class="action-btn stop-btn" onclick="stopSystem()">
+                <i class="fas fa-stop"></i>
+                <span>Зупинити систему</span>
+            </button>
+            
+            <button class="action-btn restart-btn" onclick="restartSystem()">
+                <i class="fas fa-redo"></i>
+                <span>Перезапустити</span>
+            </button>
+            
+            <button class="action-btn refresh-btn" onclick="refreshStats()">
+                <i class="fas fa-sync-alt"></i>
+                <span>Оновити статистику</span>
+            </button>
+        </div>
+        
+        <h3>Діагностика та логування</h3>
+        <div class="actions-grid">
+            <!-- <button class="action-btn diagnostic-btn" onclick="runDiagnostics()">
+                <i class="fas fa-stethoscope"></i>
+                <span>Діагностика</span>
+            </button> -->
+            
+            <button class="action-btn recovery-btn" onclick="emergencyRecovery()">
+                <i class="fas fa-medkit"></i>
+                <span>Аварійне відновлення</span>
+            </button>
+            
+            <button class="action-btn export-btn" onclick="exportLogs()">
+                <i class="fas fa-download"></i>
+                <span>Експорт логів</span>
+            </button>
+            
+            <button class="action-btn clear-logs-btn" onclick="clearLogs()">
+                <i class="fas fa-trash"></i>
+                <span>Очистити логи</span>
+            </button>
+        </div>
+        
+        <h3>Тестування та моніторинг</h3>
+        <div class="actions-grid">
+            <button class="action-btn test-btn" onclick="runSystemTest()">
+                <i class="fas fa-vial"></i>
+                <span>Тестування</span>
+            </button>
+            
+            <!-- <button class="action-btn monitor-btn" onclick="monitorPerformance()">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Моніторинг</span>
+            </button> -->
+        </div>
+    </div>
+
+    <div class="charts-section">
+        <div class="chart-container">
+            <h3>Активність за останні 24 години</h3>
+            <canvas id="activity-chart"></canvas>
+        </div>
+        
+        <div class="chart-container">
+            <h3>Розподіл акаунтів за групами</h3>
+            <div id="groups-chart-loading" class="chart-loading" style="display: none;">
+                <i class="fas fa-spinner fa-spin"></i>
+                <span>Завантаження даних...</span>
+            </div>
+            <canvas id="groups-chart"></canvas>
+        </div>
+    </div>
+
+    <!-- Блок останніх дій прибрано, щоб не показувати рандомні дані -->
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let activityChart, groupsChart;
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Очищаємо кеш при завантаженні сторінки
+        clearCache();
+        
+        initializeCharts();
+        loadDashboardData();
+        // Прибрано завантаження останніх дій
+        
+        // Запускаємо оптимізовану систему оновлення
+        optimizePerformance();
+        
+        // Скидаємо uptime при початковому завантаженні
+        lastUptimeMs = 0;
+        document.getElementById('uptime').textContent = '-';
+        
+        // Завантажуємо URL Google таблиці
+        loadTableUrl();
+        
+        // Встановлюємо початковий стан блокування URL поля
+        updateUrlFieldState();
+    });
+    
+    function initializeCharts() {
+        try {
+            const activityCtx = document.getElementById('activity-chart').getContext('2d');
+            activityChart = new Chart(activityCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Дії',
+                        data: [],
+                        borderColor: '#007bff',
+                        backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#ffffff'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#ffffff'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            const groupsCtx = document.getElementById('groups-chart').getContext('2d');
+            groupsChart = new Chart(groupsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: [
+                            '#007bff',
+                            '#28a745',
+                            '#ffc107',
+                            '#dc3545',
+                            '#6f42c1',
+                            '#fd7e14'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#ffffff'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            logEvent('Графіки успішно ініціалізовано', 'info');
+        } catch (error) {
+            logEvent(`Помилка ініціалізації графіків: ${error.message}`, 'error');
+            showNotification('Помилка ініціалізації графіків', 'error');
+        }
+    }
+    
+    // Функція для перевірки стану графіків
+    function validateCharts() {
+        if (!activityChart || !groupsChart) {
+            logEvent('Графіки не ініціалізовано, спробуємо переініціалізувати', 'warn');
+            initializeCharts();
+            return false;
+        }
+        return true;
+    }
+    
+    // Кеш для даних груп на клієнтській стороні
+    let groupsChartCache = {
+        data: null,
+        timestamp: 0,
+        ttl: 25000 // 25 секунд
+    };
+    
+    // Функція для очищення кешу
+    function clearCache() {
+        groupsChartCache.data = null;
+        groupsChartCache.timestamp = 0;
+        logEvent('Кеш очищено', 'info');
+    }
+    
+    // Функція для перевірки валідності кешу
+    function isCacheValid() {
+        if (!groupsChartCache.data || groupsChartCache.timestamp === 0) {
+            return false;
+        }
+        const now = Date.now();
+        return (now - groupsChartCache.timestamp) < groupsChartCache.ttl;
+    }
+    
+    function loadDashboardData() {
+        // Показуємо індикатор завантаження для основної статистики
+        const statsElements = document.querySelectorAll('.stat-number');
+        statsElements.forEach(el => {
+            if (el.textContent !== '-') {
+                el.style.opacity = '0.7';
+            }
+        });
+        
+        // Завантажуємо основну статистику
+        safeFetch('/api/status', {}, 'завантаження статистики')
+            .then(response => response.json())
+            .then(data => {
+                updateStats(data);
+                // Повертаємо нормальну прозорість
+                statsElements.forEach(el => {
+                    el.style.opacity = '1';
+                });
+            })
+            .catch(error => {
+                // Повертаємо нормальну прозорість
+                statsElements.forEach(el => {
+                    el.style.opacity = '1';
+                });
+            });
+        
+        // Завантажуємо статистику активності
+        safeFetch('/api/activity-stats', {}, 'завантаження статистики активності')
+            .then(response => response.json())
+            .then(data => {
+                updateActivityChart(data);
+            })
+            .catch(error => {
+                // Помилка вже оброблена в safeFetch
+            });
+        
+        // Завантажуємо статистику груп з кешуванням
+        loadGroupsData();
+    }
+    
+    function loadGroupsData() {
+        const loadingElement = document.getElementById('groups-chart-loading');
+        
+        // Перевіряємо кеш
+        if (isCacheValid()) {
+            updateGroupsChart(groupsChartCache.data);
+            return;
+        }
+        
+        // Показуємо індикатор завантаження
+        if (loadingElement) {
+            loadingElement.style.display = 'flex';
+        }
+        
+        // Завантажуємо нові дані
+        safeFetch('/api/group-stats', {}, 'завантаження статистики груп')
+            .then(response => response.json())
+            .then(data => {
+                // Кешуємо успішні дані
+                groupsChartCache.data = data;
+                groupsChartCache.timestamp = Date.now();
+                
+                updateGroupsChart(data);
+                
+                // Приховуємо індикатор завантаження
+                if (loadingElement) {
+                    loadingElement.style.display = 'none';
+                }
+            })
+            .catch(error => {
+                handleNetworkError(error, 'завантаження статистики груп');
+                
+                // Приховуємо індикатор завантаження
+                if (loadingElement) {
+                    loadingElement.style.display = 'none';
+                }
+                
+                // Використовуємо кешовані дані якщо є
+                if (groupsChartCache.data) {
+                    logEvent('Використовуємо кешовані дані груп', 'info');
+                    updateGroupsChart(groupsChartCache.data);
+                } else {
+                    // Показуємо fallback дані
+                    const fallbackData = {
+                        groups: ['A', 'B', 'C', 'D', 'E'],
+                        counts: [15, 12, 8, 6, 4],
+                        details: {
+                            'A': {'count': 15, 'active': 12, 'warm_up': 45},
+                            'B': {'count': 12, 'active': 10, 'warm_up': 38},
+                            'C': {'count': 8, 'active': 7, 'warm_up': 25},
+                            'D': {'count': 6, 'active': 5, 'warm_up': 18},
+                            'E': {'count': 4, 'active': 3, 'warm_up': 12}
+                        }
+                    };
+                    updateGroupsChart(fallbackData);
+                }
+            });
+    }
+    
+    let lastUptimeMs = 0;
+    let uptimeInterval = null;
+    function updateStats(data) {
+        // Валідація вхідних даних
+        if (!data || typeof data !== 'object') {
+            console.warn('Невірний формат даних для статистики:', data);
+            return;
+        }
+        
+        try {
+            // Оновлюємо статистику з валідацією
+            const goodAccounts = parseInt(data.good_accounts) || 0;
+            const newAccounts = parseInt(data.new_accounts) || 0;
+            const runningGroups = parseInt(data.active_groups) || 0;
+            const todayActions = parseInt(data.today_actions) || 0;
+            const uptimeMs = parseInt(data.uptime_ms) || 0;
+            
+            document.getElementById('good-accounts').textContent = goodAccounts;
+            document.getElementById('new-accounts').textContent = newAccounts;
+            document.getElementById('running-groups').textContent = runningGroups;
+            document.getElementById('today-actions').textContent = todayActions;
+            
+            // Оновлюємо uptime тільки якщо система запущена
+            if (data.system_running && uptimeMs > 0) {
+                lastUptimeMs = uptimeMs;
+                document.getElementById('uptime').textContent = formatUptime(uptimeMs);
+                startUptimeTicker();
+            } else if (!data.system_running) {
+                lastUptimeMs = 0;
+                document.getElementById('uptime').textContent = '-';
+                stopUptimeTicker();
+            }
+            
+            // Оновлюємо статус кнопок
+            const startBtn = document.querySelector('.start-btn');
+            const stopBtn = document.querySelector('.stop-btn');
+            
+            if (data.system_running) {
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+            } else {
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+            }
+            
+            // Оновлюємо стан блокування URL поля
+            updateUrlFieldState();
+            
+            logEvent('Статистика успішно оновлена', 'info');
+        } catch (error) {
+            logEvent('Помилка оновлення статистики:', error.message, 'error');
+        }
+    }
+
+    function startUptimeTicker() {
+        // Якщо таймер вже запущений, не запускаємо новий
+        if (uptimeInterval) return;
+        
+        uptimeInterval = setInterval(() => {
+            // Оновлюємо uptime тільки якщо система запущена
+            if (lastUptimeMs > 0) {
+                lastUptimeMs += 1000;
+                document.getElementById('uptime').textContent = formatUptime(lastUptimeMs);
+            }
+        }, 1000);
+    }
+    
+    function stopUptimeTicker() {
+        if (uptimeInterval) {
+            clearInterval(uptimeInterval);
+            uptimeInterval = null;
+        }
+        lastUptimeMs = 0;
+        document.getElementById('uptime').textContent = '-';
+    }
+    
+    function updateActivityChart(data) {
+        if (!validateCharts()) return;
+        
+        // Валідація вхідних даних
+        if (!data || typeof data !== 'object') {
+            console.warn('Невірний формат даних для графіка активності:', data);
+            return;
+        }
+        
+        const labels = data.categories || ['Пости','Ретвіти','Лайки','Підписки','Коментарі'];
+        const values = data.counts || [0,0,0,0,0];
+
+        // Перевіряємо, чи є дані для відображення
+        if (labels.length === 0 || values.length === 0) {
+            console.warn('Порожні дані для графіка активності');
+            return;
+        }
+
+        // Перевіряємо, чи співпадають довжини масивів
+        if (labels.length !== values.length) {
+            console.warn('Неспівпадіння довжин масивів категорій та значень:', labels.length, values.length);
+            return;
+        }
+
+        try {
+            activityChart.data.labels = labels;
+            activityChart.data.datasets = [{
+                label: 'Дії за день',
+                data: values,
+                backgroundColor: [
+                    'rgba(0, 123, 255, 0.4)',
+                    'rgba(40, 167, 69, 0.4)',
+                    'rgba(255, 193, 7, 0.4)',
+                    'rgba(220, 53, 69, 0.4)',
+                    'rgba(111, 66, 193, 0.4)'
+                ],
+                borderColor: [
+                    '#007bff','#28a745','#ffc107','#dc3545','#6f42c1'
+                ],
+                borderWidth: 1
+            }];
+            activityChart.config.type = 'bar';
+            activityChart.update('none');
+            
+            logEvent('Графік активності успішно оновлено', 'info');
+        } catch (error) {
+            logEvent('Помилка оновлення графіка активності:', error.message, 'error');
+        }
+    }
+    
+    function updateGroupsChart(data) {
+        if (!validateCharts()) return;
+        
+        // Перевіряємо валідність даних
+        if (!data || !Array.isArray(data.groups) || !Array.isArray(data.counts)) {
+            console.warn('Невірний формат даних для графіка груп:', data);
+            return;
+        }
+        
+        // Перевіряємо, чи є дані для відображення
+        if (data.groups.length === 0 || data.counts.length === 0) {
+            console.warn('Порожні дані для графіка груп');
+            return;
+        }
+        
+        // Перевіряємо, чи співпадають довжини масивів
+        if (data.groups.length !== data.counts.length) {
+            console.warn('Неспівпадіння довжин масивів груп та кількості:', data.groups.length, data.counts.length);
+            return;
+        }
+        
+        try {
+            groupsChart.data.labels = data.groups;
+            groupsChart.data.datasets[0].data = data.counts;
+            
+            const colors = [
+                '#007bff', '#28a745', '#ffc107', '#dc3545', '#6f42c1',
+                '#fd7e14', '#20c997', '#e83e8c', '#6c757d', '#17a2b8'
+            ];
+            
+            groupsChart.data.datasets[0].backgroundColor = colors.slice(0, data.groups.length);
+            
+            // Оновлюємо графік з анімацією
+            groupsChart.update('active');
+            
+            logEvent('Графік груп успішно оновлено', 'info');
+        } catch (error) {
+            logEvent('Помилка оновлення графіка груп:', error.message, 'error');
+        }
+    }
+    
+    // Функція останніх дій видалена
+    
+    function startSystem() {
+        safeFetch('/api/start', { method: 'POST' }, 'запуску системи')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Система запущена', 'success');
+                    // Очищаємо кеш груп при зміні статусу системи
+                    clearCache();
+                    // Скидаємо uptime при запуску системи
+                    lastUptimeMs = 0;
+                    document.getElementById('uptime').textContent = '-';
+                    loadDashboardData();
+                    // Оновлюємо стан блокування URL поля
+                    updateUrlFieldState();
+                } else {
+                    showNotification(data.error || 'Помилка запуску', 'error');
+                }
+            })
+            .catch(error => {
+                // Помилка вже оброблена в safeFetch
+            });
+    }
+    
+    function stopSystem() {
+        safeFetch('/api/stop', { method: 'POST' }, 'зупинки системи')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Система зупинена', 'success');
+                    // Очищаємо кеш груп при зміні статусу системи
+                    clearCache();
+                    // Зупиняємо uptime таймер при зупинці системи
+                    stopUptimeTicker();
+                    loadDashboardData();
+                    // Оновлюємо стан блокування URL поля
+                    updateUrlFieldState();
+                } else {
+                    showNotification(data.error || 'Помилка зупинки', 'error');
+                }
+            })
+            .catch(error => {
+                // Помилка вже оброблена в safeFetch
+            });
+    }
+    
+    function restartSystem() {
+        if (confirm('Ви впевнені, що хочете перезапустити систему?')) {
+            // Очищаємо кеш груп
+            clearCache();
+            
+            // Зупиняємо uptime таймер перед перезапуском
+            stopUptimeTicker();
+            
+            stopSystem();
+            setTimeout(() => {
+                startSystem();
+                // Оновлюємо стан блокування URL поля після перезапуску
+                setTimeout(() => {
+                    updateUrlFieldState();
+                }, 3000);
+            }, 2000);
+        }
+    }
+    
+    function refreshStats() {
+        // Очищаємо кеш груп перед оновленням
+        clearCache();
+        
+        loadDashboardData();
+        // Блок останніх дій забрано
+        showNotification('Статистика оновлена', 'info');
+    }
+    
+    function formatUptime(milliseconds) {
+        if (!milliseconds) return '00:00:00';
+        const seconds = Math.floor(milliseconds / 1000);
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = seconds % 60;
+        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'times' : 'info'}"></i>
+            <span>${message}</span>
+            <button class="notification-close" onclick="this.parentElement.remove()" title="Закрити">&times;</button>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.classList.add('show');
+        }, 100);
+        
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 10000); // Збільшено з 3 до 10 секунд
+    }
+    
+    // Функція для обробки помилок мережі
+    function handleNetworkError(error, context) {
+        console.error(`Помилка мережі в ${context}:`, error);
+        
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            showNotification('Помилка з\'єднання з сервером', 'error');
+        } else if (error.name === 'AbortError') {
+            console.log('Запит було скасовано');
+        } else {
+            showNotification(`Помилка: ${error.message}`, 'error');
+        }
+    }
+    
+    // Функція для обробки помилок API
+    function handleAPIError(response, context) {
+        if (!response.ok) {
+            let errorMessage = `HTTP ${response.status}`;
+            
+            if (response.status === 404) {
+                errorMessage = 'API endpoint не знайдено';
+            } else if (response.status === 500) {
+                errorMessage = 'Внутрішня помилка сервера';
+            } else if (response.status === 403) {
+                errorMessage = 'Доступ заборонено';
+            } else if (response.status === 401) {
+                errorMessage = 'Необхідна авторизація';
+            }
+            
+            showNotification(`${errorMessage} (${context})`, 'error');
+            throw new Error(errorMessage);
+        }
+        return response;
+    }
+    
+    // Функція для безпечного виконання fetch запитів
+    async function safeFetch(url, options = {}, context = 'запит') {
+        try {
+            const response = await fetch(url, options);
+            return handleAPIError(response, context);
+        } catch (error) {
+            handleNetworkError(error, context);
+            throw error;
+        }
+    }
+    
+    // Функція для перевірки з'єднання
+    function checkConnection() {
+        return navigator.onLine;
+    }
+    
+    // Обробник зміни стану з'єднання
+    window.addEventListener('online', function() {
+        showNotification('З\'єднання відновлено', 'success');
+        // Очищаємо кеш та перезавантажуємо дані
+        clearCache();
+        loadDashboardData();
+    });
+    
+    window.addEventListener('offline', function() {
+        showNotification('З\'єднання втрачено', 'error');
+    });
+    
+    // Функція для оптимізації продуктивності
+    function optimizePerformance() {
+        // Зменшуємо частоту оновлення при неактивності
+        let isPageVisible = true;
+        let updateInterval = 30000; // збільшено з 10 до 30 секунд за замовчуванням
+        
+        document.addEventListener('visibilitychange', function() {
+            isPageVisible = !document.hidden;
+            
+            if (isPageVisible) {
+                // Сторінка стала видимою - оновлюємо дані
+                clearCache();
+                loadDashboardData();
+                updateInterval = 30000; // збільшено з 10 до 30 секунд
+            } else {
+                // Сторінка прихована - збільшуємо інтервал
+                updateInterval = 60000; // збільшено з 30 до 60 секунд
+            }
+        });
+        
+        // Оновлюємо інтервал оновлення
+        if (window.dashboardUpdateInterval) {
+            clearInterval(window.dashboardUpdateInterval);
+        }
+        window.dashboardUpdateInterval = setInterval(loadDashboardData, updateInterval);
+    }
+    
+    // Запускаємо оптимізацію продуктивності
+    optimizePerformance();
+    
+    // Функція для автоматичного відновлення при помилках
+    let retryCount = 0;
+    const maxRetries = 3;
+    const retryDelay = 5000; // 5 секунд
+    
+    function retryOperation(operation, context) {
+        if (retryCount < maxRetries) {
+            retryCount++;
+            console.log(`Спроба ${retryCount}/${maxRetries} для ${context}`);
+            
+            setTimeout(() => {
+                operation();
+            }, retryDelay * retryCount);
+        } else {
+            console.error(`Досягнуто максимальну кількість спроб для ${context}`);
+            retryCount = 0;
+            showNotification(`Не вдалося виконати ${context} після ${maxRetries} спроб`, 'error');
+        }
+    }
+    
+    // Функція для скидання лічильника спроб
+    function resetRetryCount() {
+        retryCount = 0;
+    }
+    
+
+    
+    // Функція для очищення ресурсів
+    function cleanup() {
+        // Зупиняємо всі інтервали
+        if (uptimeInterval) {
+            clearInterval(uptimeInterval);
+        }
+        if (window.dashboardUpdateInterval) {
+            clearInterval(window.dashboardUpdateInterval);
+        }
+        
+        // Зупиняємо графіки
+        if (activityChart) {
+            activityChart.destroy();
+        }
+        if (groupsChart) {
+            groupsChart.destroy();
+        }
+        
+        logEvent('Ресурси очищено', 'info');
+    }
+    
+    // Обробник закриття сторінки
+    window.addEventListener('beforeunload', cleanup);
+    window.addEventListener('pagehide', cleanup);
+
+    // Функція для логування подій
+    function logEvent(message, level = 'info') {
+        const timestamp = new Date().toISOString();
+        const logEntry = `[${timestamp}] [${level.toUpperCase()}] ${message}`;
+        
+        console.log(logEntry);
+        
+        // Зберігаємо логи в localStorage для діагностики
+        try {
+            const logs = JSON.parse(localStorage.getItem('dashboard_logs') || '[]');
+            logs.push(logEntry);
+            
+            // Зберігаємо тільки останні 100 записів
+            if (logs.length > 100) {
+                logs.splice(0, logs.length - 100);
+            }
+            
+            localStorage.setItem('dashboard_logs', JSON.stringify(logs));
+        } catch (error) {
+            console.warn('Не вдалося зберегти лог:', error);
+        }
+    }
+    
+    // Функція для отримання логів
+    function getLogs() {
+        try {
+            return JSON.parse(localStorage.getItem('dashboard_logs') || '[]');
+        } catch (error) {
+            console.warn('Не вдалося отримати логи:', error);
+            return [];
+        }
+    }
+    
+    // Функція для очищення логів
+    function clearLogs() {
+        try {
+            localStorage.removeItem('dashboard_logs');
+            logEvent('Логи очищено', 'info');
+        } catch (error) {
+            console.warn('Не вдалося очистити логи:', error);
+        }
+    }
+
+    // Функція для експорту логів
+    function exportLogs() {
+        try {
+            const logs = getLogs();
+            const logText = logs.join('\n');
+            const blob = new Blob([logText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `dashboard_logs_${new Date().toISOString().split('T')[0]}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            URL.revokeObjectURL(url);
+            logEvent('Логи експортовано', 'info');
+            showNotification('Логи експортовано', 'success');
+        } catch (error) {
+            logEvent(`Помилка експорту логів: ${error.message}`, 'error');
+            showNotification('Помилка експорту логів', 'error');
+        }
+    }
+    
+    // Функція для діагностики системи
+    function runDiagnostics() {
+        logEvent('Запуск діагностики системи', 'info');
+        
+        const diagnostics = {
+            timestamp: new Date().toISOString(),
+            userAgent: navigator.userAgent,
+            online: navigator.onLine,
+            chartsInitialized: !!(activityChart && groupsChart),
+            cacheValid: isCacheValid(),
+            logsCount: getLogs().length
+        };
+        
+        logEvent(`Діагностика завершена: ${JSON.stringify(diagnostics)}`, 'info');
+        console.table(diagnostics);
+        
+        return diagnostics;
+    }
+    
+    // Функція для відновлення системи при критичних помилках
+    function emergencyRecovery() {
+        logEvent('Запуск аварійного відновлення', 'warn');
+        
+        try {
+            // Очищаємо всі ресурси
+            clearCache();
+            clearLogs();
+            
+            // Переініціалізуємо графіки
+            if (activityChart) {
+                activityChart.destroy();
+                activityChart = null;
+            }
+            if (groupsChart) {
+                groupsChart.destroy();
+                groupsChart = null;
+            }
+            
+            // Перезапускаємо систему
+            initializeCharts();
+            loadDashboardData();
+            
+            logEvent('Аварійне відновлення завершено', 'info');
+            showNotification('Система відновлена', 'success');
+        } catch (error) {
+            logEvent(`Помилка аварійного відновлення: ${error.message}`, 'error');
+            showNotification('Помилка відновлення системи', 'error');
+        }
+    }
+    
+    // Функція для автоматичного тестування системи
+    function runSystemTest() {
+        logEvent('Запуск автоматичного тестування системи', 'info');
+        
+        const tests = [
+            {
+                name: 'Перевірка графіків',
+                test: () => validateCharts()
+            },
+            {
+                name: 'Перевірка кешу',
+                test: () => isCacheValid()
+            },
+            {
+                name: 'Перевірка з\'єднання',
+                test: () => checkConnection()
+            },
+            {
+                name: 'Перевірка API статусу',
+                test: () => safeFetch('/api/status', {}, 'тестування API')
+            }
+        ];
+        
+        let passedTests = 0;
+        let totalTests = tests.length;
+        
+        tests.forEach((test, index) => {
+            setTimeout(() => {
+                try {
+                    const result = test.test();
+                    if (result !== false) {
+                        passedTests++;
+                        logEvent(`Тест "${test.name}" пройдено`, 'info');
+                    } else {
+                        logEvent(`Тест "${test.name}" не пройдено`, 'warn');
+                    }
+                } catch (error) {
+                    logEvent(`Помилка тесту "${test.name}": ${error.message}`, 'error');
+                }
+                
+                // Показуємо результат після завершення всіх тестів
+                if (index === totalTests - 1) {
+                    const successRate = Math.round((passedTests / totalTests) * 100);
+                    logEvent(`Тестування завершено: ${passedTests}/${totalTests} тестів пройдено (${successRate}%)`, 'info');
+                    
+                    if (successRate < 50) {
+                        showNotification(`Критичні проблеми: ${successRate}% тестів пройдено`, 'error');
+                        emergencyRecovery();
+                    } else if (successRate < 100) {
+                        showNotification(`Попередження: ${successRate}% тестів пройдено`, 'warning');
+                    } else {
+                        showNotification(`Всі тести пройдено успішно!`, 'success');
+                    }
+                }
+            }, index * 1000); // Запускаємо тести з затримкою
+        });
+    }
+    
+    // Функція для моніторингу продуктивності
+    function monitorPerformance() {
+        const startTime = performance.now();
+        
+        // Вимірюємо час завантаження даних
+        const dataLoadStart = performance.now();
+        
+        safeFetch('/api/status', {}, 'моніторинг продуктивності')
+            .then(response => response.json())
+            .then(data => {
+                const dataLoadTime = performance.now() - dataLoadStart;
+                logEvent(`Час завантаження даних: ${dataLoadTime.toFixed(2)}ms`, 'info');
+                
+                if (dataLoadTime > 5000) {
+                    logEvent('Повільне завантаження даних', 'warn');
+                }
+            })
+            .catch(error => {
+                logEvent(`Помилка моніторингу продуктивності: ${error.message}`, 'error');
+            });
+        
+        const totalTime = performance.now() - startTime;
+        logEvent(`Загальний час моніторингу: ${totalTime.toFixed(2)}ms`, 'info');
+    }
+    
+    // Функція для оновлення стану блокування URL поля
+    function updateUrlFieldState() {
+        const urlInput = document.getElementById('table-url');
+        const saveButton = document.querySelector('.save-url-btn');
+        const statusText = document.getElementById('url-status-text');
+        const lockedText = document.getElementById('url-locked-text');
+        
+        // Отримуємо поточний статус системи
+        const systemStatus = document.getElementById('uptime').textContent;
+        const isSystemRunning = systemStatus !== '-' && systemStatus !== '00:00:00';
+        
+        console.log('URL Field State Update:', {
+            systemStatus,
+            isSystemRunning,
+            uptimeElement: document.getElementById('uptime')?.textContent
+        });
+        
+        if (isSystemRunning) {
+            // Система працює - блокуємо поле
+            urlInput.disabled = true;
+            saveButton.disabled = true;
+            statusText.style.display = 'none';
+            lockedText.style.display = 'block';
+            console.log('URL field locked - system is running');
+        } else {
+            // Система зупинена - розблоковуємо поле
+            urlInput.disabled = false;
+            saveButton.disabled = false;
+            statusText.style.display = 'block';
+            lockedText.style.display = 'none';
+            console.log('URL field unlocked - system is stopped');
+        }
+    }
+    
+    // Функції для роботи з URL Google таблиці
+    async function loadTableUrl() {
+        try {
+            const response = await fetch('/api/settings');
+            if (response.ok) {
+                const settings = await response.json();
+                const tableUrl = settings.google_sheets?.accounts_table_url || '';
+                document.getElementById('table-url').value = tableUrl;
+            }
+        } catch (error) {
+            console.error('Помилка завантаження URL таблиці:', error);
+        }
+    }
+    
+    async function saveTableUrl() {
+        // Перевіряємо, чи не заблоковане поле
+        const urlInput = document.getElementById('table-url');
+        if (urlInput.disabled) {
+            const systemStatus = document.getElementById('uptime').textContent;
+            showNotification(`Неможливо змінити URL під час роботи скрипта прогріву (статус: ${systemStatus})`, 'warning');
+            return;
+        }
+        
+        const tableUrl = urlInput.value.trim();
+        
+        if (!tableUrl) {
+            showNotification('Введіть URL таблиці', 'error');
+            return;
+        }
+        
+        if (!tableUrl.includes('docs.google.com/spreadsheets')) {
+            showNotification('Введіть коректний URL Google таблиці', 'error');
+            return;
+        }
+        
+        try {
+            // Зберігаємо URL в налаштуваннях
+            const response = await fetch('/api/settings', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    google_sheets: {
+                        accounts_table_url: tableUrl
+                    }
+                })
+            });
+            
+            if (response.ok) {
+                showNotification('URL таблиці збережено успішно', 'success');
+                
+                // Перезавантажуємо Google таблицю
+                try {
+                    const reloadResponse = await fetch('/api/reload-google-table', {
+                        method: 'POST'
+                    });
+                    
+                    if (reloadResponse.ok) {
+                        showNotification('Google таблицю перезавантажено', 'success');
+                    } else {
+                        showNotification('URL збережено, але помилка перезавантаження таблиці', 'warning');
+                    }
+                } catch (reloadError) {
+                    console.error('Помилка перезавантаження таблиці:', reloadError);
+                    showNotification('URL збережено, але помилка перезавантаження таблиці', 'warning');
+                }
+                
+                // Очищаємо кеш для оновлення даних
+                clearCache();
+            } else {
+                showNotification('Помилка збереження URL таблиці', 'error');
+            }
+        } catch (error) {
+            console.error('Помилка збереження URL таблиці:', error);
+            showNotification('Помилка збереження URL таблиці', 'error');
+        }
+    }
+</script>
+{% endblock %}

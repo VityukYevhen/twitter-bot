@@ -1,0 +1,665 @@
+{% extends "base.html" %}
+
+{% block title %}Управління акаунтами - Twitter Bot Control{% endblock %}
+{% block page_title %}Управління акаунтами{% endblock %}
+
+{% block content %}
+<div class="accounts-container">
+    <!-- Фільтри та пошук -->
+    <div class="accounts-filters">
+        <div class="filter-group">
+            <label for="status-filter">Статус:</label>
+            <select id="status-filter" onchange="filterAccounts()">
+                <option value="">Всі</option>
+                <option value="New">New</option>
+                <option value="Good">Good</option>
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label for="group-filter">Група:</label>
+            <select id="group-filter" onchange="filterAccounts()">
+                <option value="">Всі групи</option>
+                <!-- Динамічно заповнюється -->
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label for="search-input">Пошук:</label>
+            <input 
+                type="text" 
+                id="search-input" 
+                placeholder="Username або Auth Token..."
+                oninput="filterAccounts()"
+            >
+        </div>
+        
+        <button class="refresh-btn" onclick="loadAccounts(true)">
+            <i class="fas fa-sync-alt"></i>
+            Оновити
+        </button>
+        <button class="refresh-btn" style="margin-left: auto;" onclick="openAddAccountModal()">
+            <i class="fas fa-user-plus"></i>
+            Додати акаунт
+        </button>
+    </div>
+
+    <!-- Прибрано блок статистики -->
+
+    <!-- Таблиця акаунтів -->
+    <div class="accounts-table-container">
+        <table class="accounts-table">
+            <thead>
+                <tr>
+                    <th onclick="sortTable('username')">
+                        Username
+                        <i class="fas fa-sort"></i>
+                    </th>
+                    <th onclick="sortTable('status')">
+                        Статус
+                        <i class="fas fa-sort"></i>
+                    </th>
+                    <th onclick="sortTable('warm_up_days')">
+                        Warm-up днів
+                        <i class="fas fa-sort"></i>
+                    </th>
+                    <th onclick="sortTable('group')">
+                        Група
+                        <i class="fas fa-sort"></i>
+                    </th>
+                    <th onclick="sortTable('next_action')">
+                        Наступна дія
+                        <i class="fas fa-sort"></i>
+                    </th>
+                    <th>Дії</th>
+                </tr>
+            </thead>
+            <tbody id="accounts-tbody">
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Пагінація -->
+    <div class="pagination" id="pagination">
+    </div>
+</div>
+
+<!-- Модальне вікно редагування акаунта -->
+<div class="modal" id="edit-account-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Редагування акаунта</h3>
+            <button class="close-btn" onclick="closeEditModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="modal-body">
+            <form id="edit-account-form">
+                <div class="form-group">
+                    <label for="edit-username">Username:</label>
+                    <input type="text" id="edit-username" readonly>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-status">Статус:</label>
+                    <select id="edit-status">
+                        <option value="New">New</option>
+                        <option value="Good">Good</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-warm-up-days">Warm-up днів:</label>
+                    <input type="number" id="edit-warm-up-days" min="0" max="365">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-group">Група:</label>
+                    <input type="text" id="edit-group">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-proxy">Проксі:</label>
+                    <input type="text" id="edit-proxy" placeholder="Не вказано">
+                </div>
+            </form>
+        </div>
+        
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeEditModal()">Скасувати</button>
+            <button class="btn btn-primary" onclick="saveAccountChanges()">Зберегти</button>
+        </div>
+    </div>
+</div>
+
+<!-- Модальне вікно додавання акаунта -->
+<div class="modal" id="add-account-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Додати новий акаунт</h3>
+            <button class="close-btn" onclick="closeAddAccountModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="add-account-form">
+                <div class="form-group">
+                    <label for="add-username">Username:</label>
+                    <input type="text" id="add-username" required>
+                </div>
+                <div class="form-group">
+                    <label for="add-auth-token">Auth Token:</label>
+                    <input type="text" id="add-auth-token" required>
+                </div>
+                <div class="form-group">
+                    <label for="add-ct0">ct0 Token:</label>
+                    <input type="text" id="add-ct0" required>
+                </div>
+                <div class="form-group">
+                    <label for="add-status">Статус:</label>
+                    <select id="add-status">
+                        <option value="New">New</option>
+                        <option value="Good">Good</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="add-warm-up-days">Warm-up днів:</label>
+                    <input type="number" id="add-warm-up-days" min="0" value="0">
+                </div>
+                <div class="form-group">
+                    <label for="add-group">Група:</label>
+                    <input type="text" id="add-group">
+                </div>
+                <div class="form-group">
+                    <label for="add-proxy">Проксі:</label>
+                    <input type="text" id="add-proxy" placeholder="Не вказано">
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeAddAccountModal()">Скасувати</button>
+            <button class="btn btn-primary" onclick="submitAddAccount()">Додати</button>
+        </div>
+    </div>
+</div>
+<!-- Модальне вікно масових дій -->
+<div class="modal" id="bulk-actions-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Масові дії</h3>
+            <button class="close-btn" onclick="closeBulkModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="modal-body">
+            <div class="bulk-actions-info">
+                <p>Вибрано акаунтів: <span id="selected-count">0</span></p>
+            </div>
+            
+            <div class="bulk-actions-buttons">
+                <button class="btn btn-success" onclick="bulkAction('activate')">
+                    <i class="fas fa-play"></i>
+                    Активувати всі
+                </button>
+                
+                <button class="btn btn-warning" onclick="bulkAction('deactivate')">
+                    <i class="fas fa-pause"></i>
+                    Деактивувати всі
+                </button>
+                
+                <button class="btn btn-info" onclick="bulkAction('reset-warmup')">
+                    <i class="fas fa-redo"></i>
+                    Скинути Warm-up
+                </button>
+            </div>
+        </div>
+        
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeBulkModal()">Закрити</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Глобальні змінні
+    let allAccounts = [];
+    let filteredAccounts = [];
+    let currentPage = 1;
+    let accountsPerPage = 20;
+    let selectedAccounts = new Set();
+    let currentSortColumn = '';
+    let currentSortDirection = 'asc';
+    let accountsCache = { data: null, ts: 0, ttl: 10000 };
+    
+    // Ініціалізація при завантаженні сторінки
+    document.addEventListener('DOMContentLoaded', function() {
+        loadAccounts();
+        setupEventListeners();
+        setInterval(() => loadAccounts(), 30000);  // збільшено з 10000 до 30000
+    });
+    
+    // Налаштування обробників подій
+    function setupEventListeners() {
+        // Вибір всіх акаунтів
+        document.addEventListener('click', function(e) {
+            if (e.target.id === 'select-all-accounts') {
+                toggleSelectAll();
+            }
+        });
+    }
+    
+    // Завантаження акаунтів
+    function loadAccounts(force = false) {
+        const now = Date.now();
+        if (!force && accountsCache.data && (now - accountsCache.ts) < accountsCache.ttl) {
+            allAccounts = accountsCache.data;
+            filteredAccounts = [...allAccounts];
+            updateAccountsTable();
+            updateFilters();
+            return;
+        }
+
+        fetch('/api/accounts')
+            .then(response => response.json())
+            .then(data => {
+                accountsCache = { data, ts: Date.now(), ttl: 10000 };
+                allAccounts = data;
+                filteredAccounts = [...allAccounts];
+                updateAccountsTable();
+                updateFilters();
+            })
+            .catch(() => {
+                showNotification('Помилка завантаження акаунтів', 'error');
+            });
+    }
+    
+    // Оновлення таблиці акаунтів
+    function updateAccountsTable() {
+        const tbody = document.getElementById('accounts-tbody');
+        const startIndex = (currentPage - 1) * accountsPerPage;
+        const endIndex = startIndex + accountsPerPage;
+        const pageAccounts = filteredAccounts.slice(startIndex, endIndex);
+        
+        tbody.innerHTML = pageAccounts.map(account => `
+            <tr data-auth-token="${account.Auth_Token}">
+                <td>
+                    <div class="account-username">
+                        <input type="checkbox" 
+                               class="account-checkbox" 
+                               value="${account.Auth_Token}"
+                               onchange="toggleAccountSelection('${account.Auth_Token}')"
+                               ${selectedAccounts.has(account.Auth_Token) ? 'checked' : ''}
+                        >
+                        <span>${account.Username || 'N/A'}</span>
+                    </div>
+                </td>
+                <td>
+                    <span class="status-badge status-${(account.Status || 'Unknown').toLowerCase()}">
+                        ${account.Status || 'Unknown'}
+                    </span>
+                </td>
+                <td>${account['Warm-up days'] || 0}</td>
+                <td>
+                    <span class="group-badge">${account['Unique_Group_Code'] || 'N/A'}</span>
+                </td>
+                <td>${formatLastAction(account['Next_Launch'])}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn-icon edit-btn" onclick="editAccount('${account.Auth_Token}')" title="Редагувати">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        
+                        <button class="btn-icon view-btn" onclick="viewAccountDetails('${account.Auth_Token}')" title="Деталі">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn-icon delete-btn" onclick="deleteAccount('${account.Auth_Token}')" title="Видалити">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+        
+        updatePagination();
+    }
+    
+    // Прибрано підрахунок статистики
+    
+    // Оновлення фільтрів
+    function updateFilters() {
+        const groupFilter = document.getElementById('group-filter');
+        const groups = [...new Set(allAccounts.map(acc => acc['Unique_Group_Code']).filter(Boolean))];
+        
+        groupFilter.innerHTML = '<option value="">Всі групи</option>' + 
+            groups.map(group => `<option value="${group}">${group}</option>`).join('');
+    }
+    
+    // Фільтрація акаунтів
+    function filterAccounts() {
+        const statusFilter = document.getElementById('status-filter').value;
+        const groupFilter = document.getElementById('group-filter').value;
+        const searchInput = document.getElementById('search-input').value.toLowerCase();
+        
+        filteredAccounts = allAccounts.filter(account => {
+            const statusMatch = !statusFilter || account.Status === statusFilter;
+            const groupMatch = !groupFilter || account['Unique_Group_Code'] === groupFilter;
+            const searchMatch = !searchInput || 
+                (account.Username && account.Username.toLowerCase().includes(searchInput)) ||
+                (account.Auth_Token && account.Auth_Token.toLowerCase().includes(searchInput));
+            
+            return statusMatch && groupMatch && searchMatch;
+        });
+        
+        currentPage = 1;
+        updateAccountsTable();
+    }
+    
+    // Сортування таблиці
+    function sortTable(column) {
+        if (currentSortColumn === column) {
+            currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentSortColumn = column;
+            currentSortDirection = 'asc';
+        }
+        
+        filteredAccounts.sort((a, b) => {
+            let aVal = a[column] || '';
+            let bVal = b[column] || '';
+            
+            if (column === 'warm_up_days') {
+                aVal = parseInt(a['Warm-up days']) || 0;
+                bVal = parseInt(b['Warm-up days']) || 0;
+            } else if (column === 'group') {
+                aVal = a['Unique_Group_Code'] || '';
+                bVal = b['Unique_Group_Code'] || '';
+            } else if (column === 'next_action') {
+                aVal = a['Next_Launch'] || 0;
+                bVal = b['Next_Launch'] || 0;
+            } else if (column === 'username') {
+                aVal = a['Username'] || '';
+                bVal = b['Username'] || '';
+            }
+            
+            if (currentSortDirection === 'asc') {
+                return aVal > bVal ? 1 : -1;
+            } else {
+                return aVal < bVal ? 1 : -1;
+            }
+        });
+        
+        updateAccountsTable();
+    }
+    
+    // Оновлення пагінації
+    function updatePagination() {
+        const totalPages = Math.ceil(filteredAccounts.length / accountsPerPage);
+        const pagination = document.getElementById('pagination');
+        
+        if (totalPages <= 1) {
+            pagination.innerHTML = '';
+            return;
+        }
+        
+        let paginationHTML = '';
+        
+        // Кнопка "Попередня"
+        if (currentPage > 1) {
+            paginationHTML += `<button onclick="goToPage(${currentPage - 1})" class="page-btn">‹</button>`;
+        }
+        
+        // Номери сторінок
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === currentPage) {
+                paginationHTML += `<button class="page-btn active">${i}</button>`;
+            } else if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                paginationHTML += `<button onclick="goToPage(${i})" class="page-btn">${i}</button>`;
+            } else if (i === currentPage - 3 || i === currentPage + 3) {
+                paginationHTML += `<span class="page-dots">...</span>`;
+            }
+        }
+        
+        // Кнопка "Наступна"
+        if (currentPage < totalPages) {
+            paginationHTML += `<button onclick="goToPage(${currentPage + 1})" class="page-btn">›</button>`;
+        }
+        
+        pagination.innerHTML = paginationHTML;
+    }
+    
+    // Перехід на сторінку
+    function goToPage(page) {
+        currentPage = page;
+        updateAccountsTable();
+    }
+    
+    // Вибір/зняття вибору акаунта
+    function toggleAccountSelection(authToken) {
+        if (selectedAccounts.has(authToken)) {
+            selectedAccounts.delete(authToken);
+        } else {
+            selectedAccounts.add(authToken);
+        }
+        
+        updateSelectedCount();
+    }
+    
+    // Вибір всіх акаунтів
+    function toggleSelectAll() {
+        const checkboxes = document.querySelectorAll('.account-checkbox');
+        const selectAllCheckbox = document.getElementById('select-all-accounts');
+        
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = selectAllCheckbox.checked;
+            if (selectAllCheckbox.checked) {
+                selectedAccounts.add(checkbox.value);
+            } else {
+                selectedAccounts.delete(checkbox.value);
+            }
+        });
+        
+        updateSelectedCount();
+    }
+    
+    // Оновлення лічильника вибраних
+    function updateSelectedCount() {
+        document.getElementById('selected-count').textContent = selectedAccounts.size;
+    }
+    
+    // Редагування акаунта
+    function editAccount(authToken) {
+        const account = allAccounts.find(acc => acc.Auth_Token === authToken);
+        if (!account) return;
+        
+        document.getElementById('edit-username').value = account.Username || '';
+        document.getElementById('edit-status').value = account.Status || 'New';
+        document.getElementById('edit-warm-up-days').value = account['Warm-up days'] || 0;
+        document.getElementById('edit-group').value = account['Unique_Group_Code'] || '';
+        document.getElementById('edit-proxy').value = account.Proxy || '';
+        
+        // зберігаємо поточний authToken у модалці для правильного збереження
+        const modal = document.getElementById('edit-account-modal');
+        modal.dataset.authToken = authToken;
+        modal.classList.add('show');
+    }
+    
+    // Закриття модального вікна редагування
+    function closeEditModal() {
+        document.getElementById('edit-account-modal').classList.remove('show');
+    }
+    
+    // Збереження змін акаунта
+    function saveAccountChanges() {
+        const authToken = document.getElementById('edit-account-modal').dataset.authToken;
+        const status = document.getElementById('edit-status').value;
+        const warmUpDays = parseInt(document.getElementById('edit-warm-up-days').value);
+        
+        const updateData = {};
+        if (status) updateData.status = status;
+        if (warmUpDays >= 0) updateData.warm_up_days = warmUpDays;
+        
+        fetch(`/api/account/${authToken}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(updateData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Акаунт оновлено', 'success');
+                closeEditModal();
+                loadAccounts();
+            } else {
+                showNotification(data.error || 'Помилка оновлення', 'error');
+            }
+        })
+        .catch(error => {
+            showNotification('Помилка з\'єднання', 'error');
+        });
+    }
+    
+    // Видалення акаунта
+    function deleteAccount(authToken) {
+        if (!confirm('Видалити акаунт?')) return;
+        fetch(`/api/account/${authToken}`, { method: 'DELETE' })
+            .then(r => r.json())
+            .then(res => {
+                if (res.success) {
+                    showNotification('Акаунт видалено', 'success');
+                    accountsCache = { data: null, ts: 0, ttl: 10000 };
+                    loadAccounts(true);
+                } else {
+                    showNotification(res.error || 'Не вдалося видалити акаунт', 'error');
+                }
+            })
+            .catch(() => showNotification('Помилка з\'єднання', 'error'));
+    }
+    
+    // Перегляд деталей акаунта
+    function viewAccountDetails(authToken) {
+        const account = allAccounts.find(acc => acc.Auth_Token === authToken);
+        if (!account) return;
+        
+        const details = `
+Username: ${account.Username || 'N/A'}
+Status: ${account.Status || 'N/A'}
+Warm-up days: ${account['Warm-up days'] || 0}
+Group: ${account['Unique_Group_Code'] || 'N/A'}
+Proxy: ${account.Proxy || 'Не вказано'}
+Auth Token: ${account.Auth_Token ? account.Auth_Token.substring(0, 20) + '...' : 'N/A'}
+        `;
+        
+        alert(details);
+    }
+    
+    // Масові дії
+    function bulkAction(action) {
+        if (selectedAccounts.size === 0) {
+            showNotification('Виберіть акаунти для дії', 'warning');
+            return;
+        }
+        
+        if (!confirm(`Ви впевнені, що хочете виконати дію "${action}" для ${selectedAccounts.size} акаунтів?`)) {
+            return;
+        }
+        
+        // Тут можна додати логіку масових дій
+        showNotification(`Масове дію "${action}" виконано`, 'success');
+        selectedAccounts.clear();
+        updateSelectedCount();
+        loadAccounts();
+    }
+    
+    // Закриття модального вікна масових дій
+    function closeBulkModal() {
+        document.getElementById('bulk-actions-modal').classList.remove('show');
+    }
+    
+    // Допоміжні функції
+    function formatLastAction(timestamp) {
+        if (!timestamp) return 'Ніколи';
+        
+        const date = new Date(timestamp * 1000);
+        const now = new Date();
+        const diff = now - date;
+        
+        if (diff < 60000) return 'Тільки що';
+        if (diff < 3600000) return `${Math.floor(diff / 60000)} хв тому`;
+        if (diff < 86400000) return `${Math.floor(diff / 3600000)} год тому`;
+        return date.toLocaleDateString('uk-UA');
+    }
+    
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'times' : type === 'warning' ? 'exclamation-triangle' : 'info'}"></i>
+            <span>${message}</span>
+            <button class="notification-close" onclick="this.parentElement.remove()" title="Закрити">&times;</button>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.classList.add('show');
+        }, 100);
+        
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 10000); // Збільшено з 3 до 10 секунд
+    }
+
+    // Додавання акаунта
+    function openAddAccountModal() {
+        document.getElementById('add-account-modal').classList.add('show');
+    }
+    function closeAddAccountModal() {
+        document.getElementById('add-account-modal').classList.remove('show');
+        const form = document.getElementById('add-account-form');
+        if (form) form.reset();
+    }
+    function submitAddAccount() {
+        const username = document.getElementById('add-username').value.trim();
+        const auth_token = document.getElementById('add-auth-token').value.trim();
+        const ct0 = document.getElementById('add-ct0').value.trim();
+        const status = document.getElementById('add-status').value;
+        const warm_up_days = parseInt(document.getElementById('add-warm-up-days').value) || 0;
+        const unique_group_code = document.getElementById('add-group').value.trim();
+        const proxy = document.getElementById('add-proxy').value.trim();
+
+        if (!username || !auth_token || !ct0) {
+            showNotification('Заповніть обов\'язкові поля', 'warning');
+            return;
+        }
+
+        fetch('/api/account', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, auth_token, ct0, status, warm_up_days, unique_group_code, proxy })
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (res.success) {
+                showNotification('Акаунт додано', 'success');
+                closeAddAccountModal();
+                accountsCache = { data: null, ts: 0, ttl: 10000 };
+                loadAccounts(true);
+            } else {
+                showNotification(res.error || 'Помилка додавання акаунта', 'error');
+            }
+        })
+        .catch(() => showNotification('Помилка з\'єднання', 'error'));
+    }
+</script>
+{% endblock %}

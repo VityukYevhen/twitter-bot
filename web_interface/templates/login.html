@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вхід - Twitter Bot Control</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="login-page">
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="logo">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <h1>Twitter Bot Control</h1>
+                <p>Введіть пароль для входу в систему</p>
+            </div>
+            
+            <form class="login-form" onsubmit="handleLogin(event)">
+                <div class="input-group">
+                    <div class="input-icon">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        placeholder="Введіть пароль"
+                        required
+                        autocomplete="current-password"
+                    >
+                </div>
+                
+                <button type="submit" class="login-btn">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Увійти
+                </button>
+            </form>
+            
+            <div class="login-footer">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function handleLogin(event) {
+            event.preventDefault();
+            
+            console.log('handleLogin викликано');
+            
+            const password = document.getElementById('password').value;
+            const loginBtn = document.querySelector('.login-btn');
+            
+            console.log('Пароль введено:', password ? 'так' : 'ні');
+            console.log('Кнопка знайдена:', loginBtn ? 'так' : 'ні');
+            
+            // Показуємо завантаження
+            loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Вхід...';
+            loginBtn.disabled = true;
+            
+            console.log('Відправляємо запит на /api/login');
+            
+            fetch('/api/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ password: password })
+            })
+            .then(response => {
+                console.log('Отримано відповідь:', response.status, response.statusText);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Дані відповіді:', data);
+                if (data.success) {
+                    console.log('Логін успішний, перенаправляємо на:', data.redirect);
+                    window.location.href = data.redirect;
+                } else {
+                    console.log('Помилка логіну:', data.message);
+                    showError(data.message || 'Помилка входу');
+                    loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Увійти';
+                    loginBtn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Помилка:', error);
+                showError('Помилка з\'єднання з сервером');
+                loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Увійти';
+                loginBtn.disabled = false;
+            });
+        }
+        
+        function showError(message) {
+            // Створюємо повідомлення про помилку
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.innerHTML = `
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>${message}</span>
+            `;
+            
+            // Додаємо до форми
+            const form = document.querySelector('.login-form');
+            form.appendChild(errorDiv);
+            
+            // Видаляємо через 5 секунд
+            setTimeout(() => {
+                if (errorDiv.parentNode) {
+                    errorDiv.parentNode.removeChild(errorDiv);
+                }
+            }, 5000);
+        }
+        
+        // Автозаповнення пароля для демо
+        document.addEventListener('DOMContentLoaded', function() {
+            const passwordInput = document.getElementById('password');
+            passwordInput.focus();
+            
+            // Додаємо можливість входу по Enter
+            passwordInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    handleLogin(e);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

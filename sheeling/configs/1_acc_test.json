@@ -1,0 +1,112 @@
+{
+  "group_name": "1 acc test",
+  "accounts_google_sheet": "https://docs.google.com/spreadsheets/d/1lw5BxZoX3dxeZRLm7jqs6e9u8CtZNHbjcsZclBT9lH8/edit?usp=sharing",
+  "logs_google_sheet": "https://docs.google.com/spreadsheets/d/15mCC3ssEGTU-HWM0GR1eG0sXE9zUtVqNQJCKBdWxTaQ/edit?usp=sharing",
+  "delays": {
+    "between_actions": {
+      "min": 120,
+      "max": 300
+    },
+    "between_likes": {
+      "min": 60,
+      "max": 180
+    },
+    "between_retweets": {
+      "min": 300,
+      "max": 600
+    },
+    "between_comments": {
+      "min": 180,
+      "max": 420
+    },
+    "between_posts": {
+      "min": 1800,
+      "max": 3600
+    }
+  },
+  "actions_per_run": {
+    "likes": {
+      "min": 5,
+      "max": 10
+    },
+    "retweets": {
+      "min": 2,
+      "max": 7
+    },
+    "comments": {
+      "min": 2,
+      "max": 6
+    },
+    "posts": {
+      "min": 1,
+      "max": 1
+    }
+  },
+  "search_keywords": [
+    "Ethereum analysis",
+    "Ethereum technolog"
+  ],
+  "post_topics": [
+    "ETH",
+    "#ETH",
+    "$ETH"
+  ],
+  "exclude_keywords": [],
+  "max_search_results": 50,
+  "search_delay": {
+    "min": 5,
+    "max": 15
+  },
+  "max_actions_per_hour": 20,
+  "max_actions_per_day": 100,
+  "avoid_same_accounts": true,
+  "randomize_timing": true,
+  "use_proxy_rotation": false,
+  "log_all_actions": true,
+  "log_errors": true,
+  "log_success_rate": true,
+  "save_screenshots": false,
+  "use_images": false,
+  "images_folder": "",
+  "search_format": "twitter_search",
+  "min_followers": 500,
+  "min_likes": 10,
+  "min_reposts": 3,
+  "min_replies": 2,
+  "search_hours": 168,
+  "key_phrases": [],
+  "comments_total_limit": 500,
+  "comments_daily_limit": 15,
+  "comments_hourly_limit": 3,
+  "comments_per_post": {
+    "min": 1,
+    "max": 2
+  },
+  "comment_interval": {
+    "min": 300,
+    "max": 600
+  },
+  "comment_engagement": {
+    "likes": {
+      "min": 5,
+      "max": 20
+    },
+    "reposts": {
+      "min": 3,
+      "max": 10
+    },
+    "views": {
+      "min": 100,
+      "max": 500
+    }
+  },
+  "comment_prompt": "Create a short, emotional response about cryptocurrencies and blockchain technology. Support or add to the author's idea. Use modern crypto slang: HODL, moon, diamond hands, bull run. Maximum 50 characters.",
+  "use_reposts": true,
+  "repost_percentage": 100,
+  "repost_prompt": "Create a short emotional comment on this repost about cryptocurrencies. Express your admiration or support for the idea. Use emojis and crypto slang. Maximum 50 characters..",
+  "use_posts": true,
+  "post_percentage": 100,
+  "post_prompt": "Create an original post about cryptocurrencies and blockchain. Use a current topic or trend as inspiration. Add your own opinion or analysis. Use the hashtags #crypto #blockchain #Bitcoin #DeFi. Maximum 150 characters.",
+  "created_at": "2025-08-29T19:43:28.997365",
+  "updated_at": "2025-08-29T19:43:28.997380"
+}

@@ -1,0 +1,410 @@
+{% extends "base.html" %}
+
+{% block title %}Налаштування - Twitter Bot Control{% endblock %}
+{% block page_title %}Налаштування{% endblock %}
+
+{% block content %}
+<div class="settings-container">
+    <!-- Settings sections -->
+    <div class="settings-sections">
+        <!-- Password Change Section -->
+        <div class="settings-section">
+            <h3><i class="fas fa-key"></i> Зміна пароля адміністратора</h3>
+            <div class="password-change-form">
+                <div class="form-group">
+                    <label for="current-password">Поточний пароль:</label>
+                    <input type="password" id="current-password" placeholder="Введіть поточний пароль">
+                </div>
+                <div class="form-group">
+                    <label for="new-password">Новий пароль:</label>
+                    <input type="password" id="new-password" placeholder="Введіть новий пароль (мін. 4 символи)">
+                </div>
+                <div class="form-group">
+                    <label for="confirm-password">Підтвердження пароля:</label>
+                    <input type="password" id="confirm-password" placeholder="Повторіть новий пароль">
+                </div>
+                <button class="btn btn-warning" onclick="changePassword()">
+                    <i class="fas fa-key"></i> Змінити пароль
+                </button>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h3><i class="fas fa-sliders-h"></i> Налаштування (settings.json)</h3>
+            <p class="settings-info">
+                <i class="fas fa-info-circle"></i>
+                <strong>Примітка:</strong> Пароль адміністратора змінюється окремо у секції вище. 
+                Поле "admin_password" не відображається в цій формі для безпеки.
+            </p>
+            <div class="settings-description" style="margin: 10px 0 15px; color: #666; font-size: 1rem; line-height: 1.5;">
+                <p style="margin: 0 0 8px;">
+                    У цьому розділі ви керуєте основними параметрами роботи бота:
+                </p>
+                <ul style="margin: 0 0 0 20px; padding: 0; list-style: disc;">
+                    <li><strong>Затримки між діями</strong> – інтервали між діями для різних типів акаунтів.</li>
+                    <li><strong>Налаштування ШІ</strong> – налаштування моделі ШІ: ключ, модель, температура, токени.</li>
+                    <li><strong>Теми пошуку контенту</strong> – теми/напрями для генерації контенту.</li>
+                    <li><strong>Основні теми генерації контенту</strong> – запити для пошуку контенту у Twitter.</li>
+                </ul>
+            </div>
+            <div class="settings-form" id="dynamic-settings">
+                <!-- Динамічно згенеровані поля на основі settings.json -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="settings-actions">
+        <button class="btn btn-primary" onclick="saveSettings()">
+            <i class="fas fa-save"></i> Зберегти налаштування
+        </button>
+        <button class="btn btn-secondary" onclick="resetSettings()">
+            <i class="fas fa-undo"></i> Скинути до стандартних
+        </button>
+        <button class="btn btn-info" onclick="exportSettings()">
+            <i class="fas fa-download"></i> Експорт налаштувань
+        </button>
+        <button class="btn btn-warning" onclick="importSettings()">
+            <i class="fas fa-upload"></i> Імпорт налаштувань
+        </button>
+    </div>
+
+    <!-- Import file input (hidden) -->
+    <input type="file" id="import-file" accept=".json" style="display: none;" onchange="handleFileImport(event)">
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Load settings when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        loadSettings();
+    });
+
+    // Load settings from API
+    async function loadSettings() {
+        try {
+            const response = await fetch('/api/settings');
+            if (response.ok) {
+                const settings = await response.json();
+                renderDynamicSettings(settings);
+            } else {
+                showNotification('Помилка завантаження налаштувань', 'error');
+            }
+        } catch (error) {
+            console.error('Error loading settings:', error);
+            showNotification('Помилка завантаження налаштувань', 'error');
+        }
+    }
+
+    // Render settings in styled sections similar to shilling form
+    function renderDynamicSettings(settings) {
+        const container = document.getElementById('dynamic-settings');
+        const delays = settings.delay_settings || {};
+        const newAcc = delays.new_account || {};
+        const medAcc = delays.medium_account || {};
+        const oldAcc = delays.old_account || {};
+        const ai = settings.ai_settings || {};
+        const explore = Array.isArray(settings.explore_searches) ? settings.explore_searches : [];
+        const cryptoTopics = (settings.post_topics && Array.isArray(settings.post_topics.crypto)) ? settings.post_topics.crypto : [];
+
+        container.innerHTML = `
+            <div class="form-section">
+                <h4><i class=\"fas fa-hourglass-half\"></i> Затримки між діями (в секундах)</h4>
+                <div class=\"form-group\" style=\"display:flex; align-items:center; gap:8px; flex-wrap:wrap;\">\n                    <label style=\"min-width: 260px;\">Затримка нових акаунтів дні 0–7 мін:</label>\n                    <input type=\"number\" min=\"0\" data-path=\"delay_settings.new_account.min_delay\" value=\"${Number.isFinite(newAcc.min_delay) ? newAcc.min_delay : ''}\" style=\"width:110px;\">\n                    <span>макс:</span>\n                    <input type=\"number\" min=\"0\" data-path=\"delay_settings.new_account.max_delay\" value=\"${Number.isFinite(newAcc.max_delay) ? newAcc.max_delay : ''}\" style=\"width:110px;\">\n                </div>
+                <div class=\"form-group\" style=\"display:flex; align-items:center; gap:8px; flex-wrap:wrap;\">\n                    <label style=\"min-width: 260px;\">Затримка середніх акаунтів дні 8–14 мін:</label>\n                    <input type=\"number\" min=\"0\" data-path=\"delay_settings.medium_account.min_delay\" value=\"${Number.isFinite(medAcc.min_delay) ? medAcc.min_delay : ''}\" style=\"width:110px;\">\n                    <span>макс:</span>\n                    <input type=\"number\" min=\"0\" data-path=\"delay_settings.medium_account.max_delay\" value=\"${Number.isFinite(medAcc.max_delay) ? medAcc.max_delay : ''}\" style=\"width:110px;\">\n                </div>
+                <div class=\"form-group\" style=\"display:flex; align-items:center; gap:8px; flex-wrap:wrap;\">\n                    <label style=\"min-width: 260px;\">Затримка старих акаунтів дні 14–End_date (≈32) мін:</label>\n                    <input type=\"number\" min=\"0\" data-path=\"delay_settings.old_account.min_delay\" value=\"${Number.isFinite(oldAcc.min_delay) ? oldAcc.min_delay : ''}\" style=\"width:110px;\">\n                    <span>макс:</span>\n                    <input type=\"number\" min=\"0\" data-path=\"delay_settings.old_account.max_delay\" value=\"${Number.isFinite(oldAcc.max_delay) ? oldAcc.max_delay : ''}\" style=\"width:110px;\">\n                </div>
+            </div>
+
+            <div class=\"form-section\">
+                <h4><i class=\"fas fa-robot\"></i> Налаштування ШІ</h4>
+                <div class=\"form-group\">
+                    <label for=\"ai_api_key\">API Key</label>
+                    <input type=\"text\" id=\"ai_api_key\" data-path=\"ai_settings.api_key\" value=\"${ai.api_key ?? ''}\" placeholder=\"Ключ доступу до моделі\">
+                </div>
+                <div class=\"form-group\">
+                    <label for=\"ai_model\">Model</label>
+                    <input type=\"text\" id=\"ai_model\" data-path=\"ai_settings.model\" value=\"${ai.model ?? ''}\" placeholder=\"Назва моделі\">
+                </div>
+                <div class=\"form-group\">
+                    <label for=\"ai_temperature\">Temperature</label>
+                    <input type=\"number\" step=\"0.1\" min=\"0\" max=\"2\" id=\"ai_temperature\" data-path=\"ai_settings.temperature\" value=\"${Number.isFinite(ai.temperature) ? ai.temperature : ''}\" placeholder=\"0.7\">
+                </div>
+                <div class=\"form-group\">
+                    <label for=\"ai_max_tokens\">Max tokens</label>
+                    <input type=\"number\" min=\"1\" id=\"ai_max_tokens\" data-path=\"ai_settings.max_tokens\" value=\"${Number.isFinite(ai.max_tokens) ? ai.max_tokens : ''}\" placeholder=\"50\">
+                </div>
+            </div>
+
+            <div class=\"form-section\">
+                <h4><i class=\"fas fa-search\"></i> Пошук і теми</h4>
+                <div class=\"form-group\">
+                    <label>Теми пошуку контенту</label>
+                    <small style=\"font-size: 0.95rem; color: #9aa0a6; display:block; margin: 4px 0 6px;\">Список пошукових запитів у Twitter для підбору контенту.</small>
+                    <textarea style=\"min-height: 100px;\" data-path=\"explore_searches\">${JSON.stringify(explore, null, 2)}</textarea>
+                </div>
+                <div class=\"form-group\">
+                    <label>Основні теми генерації контенту</label>
+                    <small style=\"font-size: 0.95rem; color: #9aa0a6; display:block; margin: 4px 0 6px;\">Теми для генерації/добору контенту у ніші crypto.</small>
+                    <textarea style=\"min-height: 100px;\" data-path=\"post_topics.crypto\">${JSON.stringify(cryptoTopics, null, 2)}</textarea>
+                </div>
+            </div>
+        `;
+
+        // Keep a copy for save
+        window._currentSettings = settings;
+    }
+
+    // Save settings
+    async function saveSettings() {
+        // Collect settings from rendered fields back into JSON
+        function setByPath(target, path, value) {
+            const parts = path.split('.');
+            let cur = target;
+            for (let i = 0; i < parts.length - 1; i++) {
+                const p = parts[i];
+                if (!(p in cur) || typeof cur[p] !== 'object' || cur[p] === null) {
+                    cur[p] = {};
+                }
+                cur = cur[p];
+            }
+            cur[parts[parts.length - 1]] = value;
+        }
+
+        const settings = JSON.parse(JSON.stringify(window._currentSettings || {}));
+        
+        // Зберігаємо поточний admin_password, щоб не перезаписати його
+        const currentAdminPassword = settings.admin_password;
+        
+        // Inputs
+        document.querySelectorAll('#dynamic-settings input').forEach(inp => {
+            const path = inp.dataset.path;
+            if (!path) return;
+            
+            // Пропускаємо admin_password
+            if (path === 'admin_password') {
+                return;
+            }
+            // Поле google_sheets.accounts_table_url ми не рендеримо, тож і не збираємо його з DOM
+            if (path === 'google_sheets.accounts_table_url') {
+                return;
+            }
+            
+            let val;
+            if (inp.type === 'number') val = inp.value === '' ? null : Number(inp.value);
+            else if (inp.type === 'checkbox') val = !!inp.checked;
+            else val = inp.value;
+            setByPath(settings, path, val);
+        });
+        // Textareas (arrays)
+        document.querySelectorAll('#dynamic-settings textarea').forEach(ta => {
+            const path = ta.dataset.path;
+            if (!path) return;
+            try {
+                const arr = JSON.parse(ta.value || '[]');
+                setByPath(settings, path, arr);
+            } catch (e) {
+                showNotification(`Невірний JSON у полі ${path}`, 'error');
+            }
+        });
+        
+        // Відновлюємо admin_password
+        if (currentAdminPassword) {
+            settings.admin_password = currentAdminPassword;
+        }
+        
+        try {
+            const response = await fetch('/api/settings', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(settings)
+            });
+
+            if (response.ok) {
+                showNotification('Налаштування збережено успішно', 'success');
+            } else {
+                showNotification('Помилка збереження налаштувань', 'error');
+            }
+        } catch (error) {
+            console.error('Error saving settings:', error);
+            showNotification('Помилка збереження налаштувань', 'error');
+        }
+    }
+
+    // Remove legacy helpers (kept no-op to avoid console errors if referenced)
+    function collectSettingsFromForm() { return window._currentSettings || {}; }
+
+    // Reset settings to defaults
+    function resetSettings() {
+        if (confirm('Ви впевнені, що хочете скинути всі налаштування до стандартних значень?\n\n⚠️ Пароль адміністратора НЕ буде змінений.')) {
+            // Clear all form fields
+            document.querySelectorAll('input[type="text"], input[type="number"], input[type="email"]').forEach(input => {
+                input.value = '';
+            });
+            document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            
+            // Set some reasonable defaults
+            document.getElementById('max-accounts').value = '100';
+            document.getElementById('default-delay').value = '60';
+            document.getElementById('warm-up-period').value = '7';
+            document.getElementById('max-daily-actions').value = '20';
+            document.getElementById('action-interval').value = '30';
+            document.getElementById('max-failed-attempts').value = '3';
+            document.getElementById('suspension-duration').value = '24';
+            
+            showNotification('Налаштування скинуто до стандартних (пароль адміністратора не змінений)', 'info');
+        }
+    }
+
+    // Export settings
+    function exportSettings() {
+        const settings = collectSettingsFromForm();
+        
+        // Створюємо копію без admin_password для експорту
+        const exportSettings = { ...settings };
+        if (exportSettings.admin_password) {
+            delete exportSettings.admin_password;
+        }
+        
+        const dataStr = JSON.stringify(exportSettings, null, 2);
+        const dataBlob = new Blob([dataStr], {type: 'application/json'});
+        
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(dataBlob);
+        link.download = 'bot-settings-export.json';
+        link.click();
+        
+        showNotification('Налаштування експортовано (без пароля адміністратора)', 'success');
+    }
+
+    // Import settings
+    function importSettings() {
+        document.getElementById('import-file').click();
+    }
+
+    // Handle file import
+    function handleFileImport(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const importedSettings = JSON.parse(e.target.result);
+                
+                // Зберігаємо поточний admin_password
+                const currentSettings = window._currentSettings || {};
+                const currentAdminPassword = currentSettings.admin_password;
+                
+                // Об'єднуємо налаштування, але зберігаємо admin_password
+                const mergedSettings = { ...importedSettings };
+                if (currentAdminPassword) {
+                    mergedSettings.admin_password = currentAdminPassword;
+                }
+                
+                renderDynamicSettings(mergedSettings);
+                showNotification('Налаштування імпортовано успішно (пароль адміністратора збережено)', 'success');
+            } catch (error) {
+                showNotification('Помилка читання файлу налаштувань', 'error');
+            }
+        };
+        reader.readAsText(file);
+        
+        // Reset file input
+        event.target.value = '';
+    }
+
+    // Change password function
+    async function changePassword() {
+        const currentPassword = document.getElementById('current-password').value;
+        const newPassword = document.getElementById('new-password').value;
+        const confirmPassword = document.getElementById('confirm-password').value;
+        
+        // Validation
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            showNotification('Всі поля обов\'язкові', 'error');
+            return;
+        }
+        
+        if (newPassword !== confirmPassword) {
+            showNotification('Новий пароль та підтвердження не співпадають', 'error');
+            return;
+        }
+        
+        if (newPassword.length < 4) {
+            showNotification('Пароль має бути не менше 4 символів', 'error');
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/change-password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    current_password: currentPassword,
+                    new_password: newPassword,
+                    confirm_password: confirmPassword
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                showNotification(result.message || 'Пароль успішно змінено', 'success');
+                // Clear form fields
+                document.getElementById('current-password').value = '';
+                document.getElementById('new-password').value = '';
+                document.getElementById('confirm-password').value = '';
+            } else {
+                showNotification(result.error || 'Помилка зміни пароля', 'error');
+            }
+        } catch (error) {
+            console.error('Error changing password:', error);
+            showNotification('Помилка зміни пароля', 'error');
+        }
+    }
+
+    // Toggle password visibility
+    function togglePassword(inputId) {
+        const input = document.getElementById(inputId);
+        const button = input.nextElementSibling;
+        const icon = button.querySelector('i');
+        
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.className = 'fas fa-eye-slash';
+        } else {
+            input.type = 'password';
+            icon.className = 'fas fa-eye';
+        }
+    }
+
+    // Show notification
+    function showNotification(message, type = 'info') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+            <span>${message}</span>
+            <button class="notification-close" onclick="this.parentElement.remove()" title="Закрити">&times;</button>
+        `;
+        
+        // Add to page
+        document.body.appendChild(notification);
+        
+        // Auto-remove after 10 seconds (збільшено з 5 до 10)
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.remove();
+            }
+        }, 10000);
+    }
+</script>
+{% endblock %}

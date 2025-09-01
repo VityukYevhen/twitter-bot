@@ -1,0 +1,448 @@
+{% extends "base.html" %}
+
+{% block title %}Логи - Twitter Bot Control{% endblock %}
+{% block page_title %}Логи активності{% endblock %}
+
+{% block content %}
+<div class="logs-container">
+    <!-- Filters and search -->
+    <div class="logs-filters">
+        <div class="filter-group">
+            <label for="date-filter">Дата:</label>
+            <input type="date" id="date-filter" onchange="filterLogs()">
+        </div>
+        <div class="filter-group">
+            <label for="level-filter">Рівень:</label>
+            <select id="level-filter" onchange="filterLogs()">
+                <option value="">Всі рівні</option>
+                <option value="INFO">INFO</option>
+                <option value="WARNING">WARNING</option>
+                <option value="ERROR">ERROR</option>
+                <option value="DEBUG">DEBUG</option>
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label for="action-filter">Дія:</label>
+            <select id="action-filter" onchange="filterLogs()">
+                <option value="">All actions</option>
+                <option value="Repost">Repost</option>
+                <option value="Reply">Reply</option>
+                <option value="Post">Post</option>
+                <option value="Like">Like</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label for="search-filter">Пошук:</label>
+            <input type="text" id="search-filter" placeholder="Пошук по тексту..." oninput="filterLogs()">
+        </div>
+        <div class="filter-group">
+            <button class="btn btn-primary" onclick="refreshLogs()">
+                <i class="fas fa-sync-alt"></i> Оновити
+            </button>
+        </div>
+    </div>
+
+    <!-- Прибрано статистику рівнів -->
+
+    <!-- Logs table -->
+    <div class="logs-table-container">
+        <table class="logs-table">
+            <thead>
+                <tr>
+                    <th onclick="sortLogs('timestamp')">Date <i class="fas fa-sort"></i></th>
+                    <th onclick="sortLogs('link')">Link to reply/post/repost <i class="fas fa-sort"></i></th>
+                    <th onclick="sortLogs('message')">Text <i class="fas fa-sort"></i></th>
+                    <th onclick="sortLogs('action')">Type <i class="fas fa-sort"></i></th>
+                    <th onclick="sortLogs('account')">Account <i class="fas fa-sort"></i></th>
+                </tr>
+            </thead>
+            <tbody id="logs-tbody">
+                <!-- Dynamically populated -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" id="logs-pagination">
+        <!-- Dynamically created -->
+    </div>
+
+    <!-- Export options -->
+    <div class="logs-export">
+        <h3>Експорт логів</h3>
+        <div class="export-options">
+            <button class="btn btn-success" onclick="exportLogs('csv')">
+                <i class="fas fa-file-csv"></i> Експорт в CSV
+            </button>
+            <button class="btn btn-info" onclick="exportLogs('json')">
+                <i class="fas fa-file-code"></i> Експорт в JSON
+            </button>
+            <button class="btn btn-warning" onclick="exportLogs('txt')">
+                <i class="fas fa-file-alt"></i> Експорт в TXT
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Log details modal -->
+<div class="modal" id="log-details-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Деталі запису</h3>
+            <button class="close-btn" onclick="closeLogDetails()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="log-details">
+                <div class="detail-row">
+                    <label>Час:</label>
+                    <span id="detail-timestamp"></span>
+                </div>
+                <div class="detail-row">
+                    <label>Рівень:</label>
+                    <span id="detail-level"></span>
+                </div>
+                <div class="detail-row">
+                    <label>Акаунт:</label>
+                    <span id="detail-account"></span>
+                </div>
+                <div class="detail-row">
+                    <label>Дія:</label>
+                    <span id="detail-action"></span>
+                </div>
+                <div class="detail-row">
+                    <label>Повідомлення:</label>
+                    <span id="detail-message"></span>
+                </div>
+                <div class="detail-row">
+                    <label>Статус:</label>
+                    <span id="detail-status"></span>
+                </div>
+                <div class="detail-row">
+                    <label>Додаткові дані:</label>
+                    <pre id="detail-extra"></pre>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeLogDetails()">Закрити</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Global variables
+    let allLogs = [];
+    let filteredLogs = [];
+    let currentPage = 1;
+    let logsPerPage = 50;
+    let currentSortColumn = '';
+    let currentSortDirection = 'asc';
+
+    // Load logs when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        loadLogs();
+        setDefaultDate();
+    });
+
+    // Set default date to today
+    function setDefaultDate() {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('date-filter').value = today;
+    }
+
+    // Load logs from API
+    async function loadLogs() {
+        try {
+            const dateFilter = document.getElementById('date-filter').value;
+            const response = await fetch(`/api/logs?date=${dateFilter}`);
+            
+        if (response.ok) {
+            const logs = await response.json();
+            // Трансформація до потрібних полів (Date | Link | Text | Type | Account)
+            allLogs = logs.map(l => ({
+                timestamp: l.timestamp,
+                link: l.link || '',
+                message: l.message,
+                action: l.action,
+                account: l.account || ''
+            }));
+            filterLogs();
+        } else {
+                showNotification('Помилка завантаження логів', 'error');
+            }
+        } catch (error) {
+            console.error('Error loading logs:', error);
+            showNotification('Помилка завантаження логів', 'error');
+        }
+    }
+
+    // Прибрано завантаження акаунтів — фільтр акаунтів не використовується
+
+    // Filter logs based on current filters
+    function filterLogs() {
+        const dateFilter = document.getElementById('date-filter').value;
+        const levelFilter = document.getElementById('level-filter').value;
+        const actionFilter = (document.getElementById('action-filter').value || '').toLowerCase();
+        const searchFilter = document.getElementById('search-filter').value.toLowerCase();
+
+        filteredLogs = allLogs.filter(log => {
+            // Клієнтська фільтрація по даті забрана — вона виконується на сервері
+
+            // Рівні/акаунт прибрані з відображення, але фільтри залишені — пропускаємо
+
+            // Action filter (порівняння без урахування регістру)
+            if (actionFilter && ((log.action || '').toLowerCase() !== actionFilter)) {
+                return false;
+            }
+
+            // Search filter
+            if (searchFilter) {
+                const searchText = `${log.message} ${log.link} ${log.action} ${log.account}`.toLowerCase();
+                if (!searchText.includes(searchFilter)) {
+                    return false;
+                }
+            }
+
+            return true;
+        });
+
+        updateLogsTable();
+        updateLogsStats();
+        updateLogsPagination();
+    }
+
+    // Update logs table
+    function updateLogsTable() {
+        const tbody = document.getElementById('logs-tbody');
+        const startIndex = (currentPage - 1) * logsPerPage;
+        const endIndex = startIndex + logsPerPage;
+        const pageLogs = filteredLogs.slice(startIndex, endIndex);
+
+        tbody.innerHTML = '';
+
+        if (pageLogs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="no-data">Логи не знайдено</td></tr>';
+            return;
+        }
+
+        pageLogs.forEach(log => {
+            const row = document.createElement('tr');
+            row.className = 'log-row';
+            
+            row.innerHTML = `
+                <td>${formatTimestamp(log.timestamp)}</td>
+                <td><a href="${log.link}" target="_blank">${log.link || '-'}</a></td>
+                <td class="log-message">${truncateMessage(log.message)}</td>
+                <td>${log.action || '-'}</td>
+                <td>${log.account || '-'}</td>
+            `;
+            
+            tbody.appendChild(row);
+        });
+    }
+
+    // Update logs statistics
+    function updateLogsStats() {}
+
+    // Update logs pagination
+    function updateLogsPagination() {
+        const totalPages = Math.ceil(filteredLogs.length / logsPerPage);
+        const pagination = document.getElementById('logs-pagination');
+        
+        if (totalPages <= 1) {
+            pagination.innerHTML = '';
+            return;
+        }
+
+        let paginationHTML = '';
+        
+        // Previous button
+        if (currentPage > 1) {
+            paginationHTML += `<button class="page-btn" onclick="goToPage(${currentPage - 1})">‹</button>`;
+        }
+
+        // Page numbers
+        const startPage = Math.max(1, currentPage - 2);
+        const endPage = Math.min(totalPages, currentPage + 2);
+
+        if (startPage > 1) {
+            paginationHTML += `<button class="page-btn" onclick="goToPage(1)">1</button>`;
+            if (startPage > 2) {
+                paginationHTML += `<span class="page-dots">...</span>`;
+            }
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            const activeClass = i === currentPage ? ' active' : '';
+            paginationHTML += `<button class="page-btn${activeClass}" onclick="goToPage(${i})">${i}</button>`;
+        }
+
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                paginationHTML += `<span class="page-dots">...</span>`;
+            }
+            paginationHTML += `<button class="page-btn" onclick="goToPage(${totalPages})">${totalPages}</button>`;
+        }
+
+        // Next button
+        if (currentPage < totalPages) {
+            paginationHTML += `<button class="page-btn" onclick="goToPage(${currentPage + 1})">›</button>`;
+        }
+
+        pagination.innerHTML = paginationHTML;
+    }
+
+    // Go to specific page
+    function goToPage(page) {
+        currentPage = page;
+        updateLogsTable();
+        updateLogsPagination();
+    }
+
+    // Sort logs
+    function sortLogs(column) {
+        if (currentSortColumn === column) {
+            currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentSortColumn = column;
+            currentSortDirection = 'asc';
+        }
+
+        filteredLogs.sort((a, b) => {
+            let aVal = a[column] || '';
+            let bVal = b[column] || '';
+
+            if (column === 'timestamp') {
+                aVal = new Date(aVal);
+                bVal = new Date(bVal);
+            }
+
+            if (aVal < bVal) return currentSortDirection === 'asc' ? -1 : 1;
+            if (aVal > bVal) return currentSortDirection === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+        currentPage = 1;
+        updateLogsTable();
+        updateLogsPagination();
+    }
+
+    // Refresh logs
+    function refreshLogs() {
+        loadLogs();
+        showNotification('Логи оновлено', 'success');
+    }
+
+    // Show log details
+    function showLogDetails(logId) {}
+
+    // Close log details modal
+    function closeLogDetails() {
+        document.getElementById('log-details-modal').style.display = 'none';
+    }
+
+    // Export logs
+    function exportLogs(format) {
+        if (filteredLogs.length === 0) {
+            showNotification('Немає логів для експорту', 'warning');
+            return;
+        }
+
+        let content = '';
+        let filename = `logs-${new Date().toISOString().split('T')[0]}`;
+        let mimeType = '';
+
+        switch (format) {
+            case 'csv':
+                content = exportToCSV();
+                filename += '.csv';
+                mimeType = 'text/csv';
+                break;
+            case 'json':
+                content = JSON.stringify(filteredLogs, null, 2);
+                filename += '.json';
+                mimeType = 'application/json';
+                break;
+            case 'txt':
+                content = exportToTXT();
+                filename += '.txt';
+                mimeType = 'text/plain';
+                break;
+        }
+
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        link.click();
+        URL.revokeObjectURL(url);
+
+        showNotification(`Логи експортовано в ${format.toUpperCase()}`, 'success');
+    }
+
+    // Export to CSV
+    function exportToCSV() {
+        const headers = ['Date', 'Link', 'Text', 'Type', 'Account'];
+        const rows = filteredLogs.map(log => [
+            log.timestamp,
+            log.link || '',
+            log.message || '',
+            log.action || '',
+            log.account || ''
+        ]);
+
+        return [headers, ...rows]
+            .map(row => row.map(cell => `"${cell}"`).join(','))
+            .join('\n');
+    }
+
+    // Export to TXT
+    function exportToTXT() {
+        return filteredLogs.map(log => 
+            `[${log.timestamp}] ${log.action || ''} - ${log.link || ''} - ${log.message || ''} - ${log.account || ''}`
+        ).join('\n');
+    }
+
+    // Helper functions
+    function formatTimestamp(timestamp) {
+        if (!timestamp) return '-';
+        return timestamp; // Показуємо, як у Google Sheets
+    }
+
+    function truncateMessage(message) {
+        if (!message) return '-';
+        return message.length > 100 ? message.substring(0, 100) + '...' : message;
+    }
+
+    // Show notification
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+            <span>${message}</span>
+            <button class="notification-close" onclick="this.parentElement.remove()" title="Закрити">&times;</button>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.remove();
+            }
+        }, 10000); // Збільшено з 5 до 10 секунд
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('log-details-modal');
+        if (event.target === modal) {
+            closeLogDetails();
+        }
+    };
+</script>
+{% endblock %}

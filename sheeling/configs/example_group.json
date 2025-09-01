@@ -1,0 +1,72 @@
+{
+  "group_code": "EXAMPLE",
+  "created_at": "2025-01-12T18:00:00",
+  "updated_at": "2025-01-12T18:00:00",
+  
+  "delays": {
+    "between_actions": {
+      "min": 30,
+      "max": 120
+    },
+    "between_likes": {
+      "min": 15,
+      "max": 45
+    },
+    "between_retweets": {
+      "min": 60,
+      "max": 180
+    },
+    "between_comments": {
+      "min": 90,
+      "max": 240
+    },
+    "between_posts": {
+      "min": 300,
+      "max": 600
+    }
+  },
+  
+  "actions_per_run": {
+    "likes": {
+      "min": 3,
+      "max": 8
+    },
+    "retweets": {
+      "min": 1,
+      "max": 3
+    },
+    "comments": {
+      "min": 1,
+      "max": 2
+    },
+    "posts": {
+      "min": 0,
+      "max": 1
+    }
+  },
+  
+  "content_search": {
+    "keywords": ["crypto", "bitcoin", "blockchain", "nft"],
+    "exclude_keywords": ["scam", "fake", "spam"],
+    "max_search_results": 50,
+    "search_delay": {
+      "min": 5,
+      "max": 15
+    }
+  },
+  
+  "safety": {
+    "max_actions_per_hour": 20,
+    "max_actions_per_day": 100,
+    "avoid_same_accounts": true,
+    "randomize_timing": true,
+    "use_proxy_rotation": false
+  },
+  
+  "logging": {
+    "log_all_actions": true,
+    "log_errors": true,
+    "log_success_rate": true,
+    "save_screenshots": false
+  }
+}

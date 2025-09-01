@@ -1,0 +1,1600 @@
+{% extends "base.html" %}
+
+{% block title %}Шилінг - Twitter Bot Control{% endblock %}
+
+{% block page_title %}Система Шилінгу{% endblock %}
+
+{% block content %}
+<div class="shilling-container">
+    <!-- Заголовок та опис -->
+    <div class="section-header">
+        <h2><i class="fas fa-rocket"></i> Управління проєктами шилінгу</h2>
+        <p>Створюйте та налаштовуйте проєкти для автоматизації роботи з Twitter аккаунтами</p>
+    </div>
+
+    <!-- Кнопка створення нової групи -->
+    <div class="create-group-section">
+        <button class="btn btn-primary" onclick="openCreateGroupModal()">
+            <i class="fas fa-plus"></i> Створити новий проєкт
+        </button>
+            </div>
+
+    <!-- Список існуючих груп -->
+    <div class="groups-list-section">
+        <h3><i class="fas fa-list"></i> Існуючі проєкти</h3>
+        <div class="groups-grid" id="groups-grid">
+            <!-- Групи будуть завантажені через JavaScript -->
+            </div>
+        </div>
+
+    <!-- Модальне вікно створення/редагування групи -->
+    <div id="groupModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Створити новий проєкт</h3>
+                <span class="close" onclick="closeGroupModal()">&times;</span>
+            </div>
+            
+            <form id="groupForm" class="group-form" method="post" action="javascript:void(0);">
+                <div class="form-group">
+                    <label for="groupName">Назва проєкту *</label>
+                    <input type="text" id="groupName" name="groupName" required 
+                           placeholder="Введіть унікальну назву проєкту">
+            </div>
+
+                <!-- Google таблиці -->
+                <div class="form-section">
+                    <h4><i class="fas fa-table"></i> Google таблиці</h4>
+                    
+                    <div class="form-group">
+                        <label for="accountsGoogleSheet">Посилання на Google-таблицю з аккаунтами *</label>
+                        <input type="url" id="accountsGoogleSheet" name="accountsGoogleSheet" required 
+                               placeholder="https://docs.google.com/spreadsheets/d/...">
+                        <small>Таблиця повинна мати формат як у функції googletable</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="logsGoogleSheet">Посилання на Google-таблицю для звітів *</label>
+                        <input type="url" id="logsGoogleSheet" name="logsGoogleSheet" required 
+                               placeholder="https://docs.google.com/spreadsheets/d/...">
+                        <small>Таблиця для запису звітів дій проєкту</small>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h4>Затримки між діями (в секундах)</h4>
+                    
+                    <div class="inline-fields-grid">
+                        <div class="inline-field-group">
+                            <span class="field-label">Між діями (мін)</span>
+                            <input type="number" id="delayBetweenActionsMin" name="delayBetweenActionsMin" 
+                                   value="120" step="1" required class="inline-input">
+                            <span class="field-label">(макс)</span>
+                            <input type="number" id="delayBetweenActionsMax" name="delayBetweenActionsMax" 
+                                   value="300" step="1" required class="inline-input">
+                        </div>
+                        
+                        <div class="inline-field-group">
+                            <span class="field-label">Між лайками (мін)</span>
+                            <input type="number" id="delayBetweenLikesMin" name="delayBetweenLikesMin" 
+                                   value="60" step="1" required class="inline-input">
+                            <span class="field-label">(макс)</span>
+                            <input type="number" id="delayBetweenLikesMax" name="delayBetweenLikesMax" 
+                                   value="180" step="1" required class="inline-input">
+                        </div>
+                        
+                        <div class="inline-field-group">
+                            <span class="field-label">Між ретвітами (мін)</span>
+                            <input type="number" id="delayBetweenRetweetsMin" name="delayBetweenRetweetsMin" 
+                                   value="300" step="1" required class="inline-input">
+                            <span class="field-label">(макс)</span>
+                            <input type="number" id="delayBetweenRetweetsMax" name="delayBetweenRetweetsMax" 
+                                   value="600" step="1" required class="inline-input">
+                        </div>
+
+                        <div class="inline-field-group">
+                            <span class="field-label">Між коментарями (мін)</span>
+                            <input type="number" id="delayBetweenCommentsMin" name="delayBetweenCommentsMin" 
+                                   value="180" step="1" required class="inline-input">
+                            <span class="field-label">(макс)</span>
+                            <input type="number" id="delayBetweenCommentsMax" name="delayBetweenCommentsMax" 
+                                   value="420" step="1" required class="inline-input">
+                        </div>
+                        
+                        <div class="inline-field-group">
+                            <span class="field-label">Між постами (мін)</span>
+                            <input type="number" id="delayBetweenPostsMin" name="delayBetweenPostsMin" 
+                                   value="1800" step="1" required class="inline-input">
+                            <span class="field-label">(макс)</span>
+                            <input type="number" id="delayBetweenPostsMax" name="delayBetweenPostsMax" 
+                                   value="3600" step="1" required class="inline-input">
+                        </div>
+                    </div>
+                </div>
+
+
+
+
+
+                <!-- НОВІ ФІЛЬТРИ: Картинки та формат пошуку -->
+                <div class="form-section">
+                    <h4><i class="fas fa-images"></i> Налаштування картинок та пошуку</h4>
+                    
+                    <div class="form-group">
+                        <label for="useImages">Використовувати картинки</label>
+                        <select id="useImages" name="useImages">
+                            <option value="no">Ні</option>
+                            <option value="yes">Так</option>
+                        </select>
+                        <small>Чи потрібно додавати картинки до постів</small>
+                    </div>
+                    
+                    <div class="form-group" id="imagesFolderGroup" style="display: none;">
+                        <label for="imagesFolder">Папка Google Drive з картинками</label>
+                        <input type="url" id="imagesFolder" name="imagesFolder" 
+                               placeholder="https://drive.google.com/drive/folders/...">
+                        <small>Посилання на папку Google Drive з картинками для постів</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="searchFormat">Формат пошуку постів</label>
+                        <select id="searchFormat" name="searchFormat">
+                            <option value="twitter_search">Звичайний Twitter пошук</option>
+                            <option value="accounts_table">По акаунтам із Google таблиці</option>
+                        </select>
+                        <small>Як шукати пости: через Twitter пошук або по акаунтам з таблиці</small>
+                    </div>
+                </div>
+
+                <!-- НОВІ ФІЛЬТРИ: Фільтри пошуку постів -->
+                <div class="form-section">
+                    <h4><i class="fas fa-filter"></i> Фільтри пошуку постів</h4>
+                    
+                    <div class="delays-grid">
+                        <div class="form-group compact">
+                            <label for="minFollowers">Мін. підписники</label>
+                            <input type="number" id="minFollowers" name="minFollowers" 
+                                   value="500" min="0" step="100">
+                        </div>
+                        
+                        <div class="form-group compact">
+                            <label for="minLikes">Мін. лайки</label>
+                            <input type="number" id="minLikes" name="minLikes" 
+                                   value="10" min="0" step="1">
+                        </div>
+                        
+                        <div class="form-group compact">
+                            <label for="minReposts">Мін. репости</label>
+                            <input type="number" id="minReposts" name="minReposts" 
+                                   value="3" min="0" step="1">
+                        </div>
+                        
+                        <div class="form-group compact">
+                            <label for="minReplies">Мін. коментарі</label>
+                            <input type="number" id="minReplies" name="minReplies" 
+                                   value="2" min="0" step="1">
+                        </div>
+                        
+                        <div class="form-group compact">
+                            <label for="searchHours">Пошук (години)</label>
+                            <input type="number" id="searchHours" name="searchHours" 
+                                   value="12" min="1" max="168" step="1">
+                            <small>За скільки останніх годин шукати пости (1-168)</small>
+                        </div>
+                    </div>
+                    
+
+                </div>
+
+
+
+                <!-- Ключові слова для пошуку -->
+                <div class="form-section">
+                    <h4><i class="fas fa-search"></i> Ключові слова для пошуку</h4>
+                    
+                    <div class="form-group">
+                        <label for="postTopics">Основні Слова/Словосполучення для пошуку в тексті постів</label>
+                        <input type="text" id="postTopics" name="postTopics" 
+                               value="cryptocurrency analysis, blockchain technology, DeFi protocols, crypto trading, market predictions, Bitcoin news, Ethereum updates"
+                               placeholder="cryptocurrency, blockchain, DeFi, trading">
+                        <small>Введіть через кому для слова/словасполучення що будуть використовуватись для перевірки на наявність в тексті поста</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="searchKeywords">Ключові слова для пошуку постів</label>
+                        <input type="text" id="searchKeywords" name="searchKeywords" 
+                               value="Bitcoin, BTC, Ethereum, ETH, crypto, blockchain, DeFi, Web3, altcoins, hodl, pump, moon, bull run, bear market"
+                               placeholder="Bitcoin, BTC, Ethereum, ETH, crypto, blockchain, DeFi, Web3">
+                        <small>Введіть через кому для пошуку постів для лайків, ретвітів та коментарів</small>
+                    </div>
+                </div>
+
+                <!-- НОВІ ФІЛЬТРИ: Налаштування коментарів -->
+                <div class="form-section">
+                    <h4><i class="fas fa-comments"></i> Налаштування коментарів</h4>
+                    
+                    <div class="delays-grid">
+                        <div class="form-group compact">
+                            <label for="commentsTotalLimit">Загальна кількість</label>
+                            <input type="number" id="commentsTotalLimit" name="commentsTotalLimit" 
+                                   value="500" min="1" step="1">
+                        </div>
+                        
+                        <div class="form-group compact">
+                            <label for="commentsDailyLimit">На день</label>
+                            <input type="number" id="commentsDailyLimit" name="commentsDailyLimit" 
+                                   value="15" min="1" step="1">
+                        </div>
+                        
+                        <div class="form-group compact">
+                            <label for="commentsHourlyLimit">На годину</label>
+                            <input type="number" id="commentsHourlyLimit" name="commentsHourlyLimit" 
+                                   value="3" min="1" step="1">
+                        </div>
+                    </div>
+                    
+                    <div class="delays-grid">
+                        <div class="form-group compact">
+                            <label for="commentsPerPostMin">На пост (мін)</label>
+                            <input type="number" id="commentsPerPostMin" name="commentsPerPostMin" 
+                                   value="1" min="1" step="1">
+                        </div>
+                        
+                        <div class="form-group compact">
+                            <label for="commentsPerPostMax">(макс)</label>
+                            <input type="number" id="commentsPerPostMax" name="commentsPerPostMax" 
+                                   value="2" min="1" step="1">
+                        </div>
+                        
+                        <div class="form-group compact">
+                            <label for="commentIntervalMin">Інтервал (мін)</label>
+                            <input type="number" id="commentIntervalMin" name="commentIntervalMin" 
+                                   value="300" min="1" step="1">
+                        </div>
+                        
+                        <div class="form-group compact">
+                            <label for="commentIntervalMax">(макс)</label>
+                            <input type="number" id="commentIntervalMax" name="commentIntervalMax" 
+                                   value="600" min="1" step="1">
+                        </div>
+                    </div>
+                    
+                    <div class="delays-grid">
+                        <div class="form-group compact">
+                            <label for="commentLikesMin">Лайки (мін)</label>
+                            <input type="number" id="commentLikesMin" name="commentLikesMin" 
+                                   value="5" min="0" step="1">
+                        </div>
+                        
+                        <div class="form-group compact">
+                            <label for="commentLikesMax">(макс)</label>
+                            <input type="number" id="commentLikesMax" name="commentLikesMax" 
+                                   value="20" min="0" step="1">
+                        </div>
+                        
+                        <div class="form-group compact">
+                            <label for="commentRepostsMin">Репости (мін)</label>
+                            <input type="number" id="commentRepostsMin" name="commentRepostsMin" 
+                                   value="3" min="0" step="1">
+                        </div>
+                        
+                        <div class="form-group compact">
+                            <label for="commentRepostsMax">(макс)</label>
+                            <input type="number" id="commentRepostsMax" name="commentRepostsMax" 
+                                   value="10" min="0" step="1">
+                        </div>
+                        
+                        <div class="form-group compact">
+                            <label for="commentViewsMin">Перегляди (мін)</label>
+                            <input type="number" id="commentViewsMin" name="commentViewsMin" 
+                                   value="100" min="0" step="1">
+                        </div>
+                        
+                        <div class="form-group compact">
+                            <label for="commentViewsMax">(макс)</label>
+                            <input type="number" id="commentViewsMax" name="commentViewsMax" 
+                                   value="500" min="0" step="1">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="commentPrompt">Промпт для коментарів</label>
+                        <textarea id="commentPrompt" name="commentPrompt" rows="3" 
+                                    placeholder="Create a short, emotional response about cryptocurrencies and blockchain technology. Support or add to the author's idea. Use modern crypto slang: HODL, moon, diamond hands, bull run. Maximum 50 characters.">Create a short, emotional response about cryptocurrencies and blockchain technology. Support or add to the author's idea. Use modern crypto slang: HODL, moon, diamond hands, bull run. Maximum 50 characters.</textarea>
+                            <small>Промпт + текст поста = готовий коментар</small>
+                    </div>
+                </div>
+
+                <!-- НОВІ ФІЛЬТРИ: Налаштування репостів -->
+                <div class="form-section">
+                    <h4><i class="fas fa-retweet"></i> Налаштування репостів з коментарем</h4>
+                    
+                    <div class="form-group">
+                        <label for="useReposts">Робити репости з коментарем</label>
+                        <select id="useReposts" name="useReposts">
+                            <option value="no">Ні</option>
+                            <option value="yes">Так</option>
+                        </select>
+                        <small>Ретвіт з цитатою тим же аккаунтом що й коментар</small>
+                    </div>
+                    
+                    <div class="form-group" id="repostSettingsGroup" style="display: none;">
+                        <label for="repostPercentage">Відсоток ймовірності репосту</label>
+                        <input type="number" id="repostPercentage" name="repostPercentage" 
+                               value="50" min="1" max="100" step="1">
+                        <small>Відсоток з якою ймовірністю буде зроблено репост</small>
+                        
+                        <label for="repostPrompt">Промпт для репостів</label>
+                        <textarea id="repostPrompt" name="repostPrompt" rows="3" 
+                                  placeholder="Create a short emotional comment on a repost about cryptocurrencies...">Create a short emotional comment on this repost about cryptocurrencies. Express your admiration or support for the idea. Use emojis and crypto slang. Maximum 50 characters..</textarea>
+                        <small>Промпт + текст поста = готовий репост</small>
+                    </div>
+                </div>
+
+                <!-- НОВІ ФІЛЬТРИ: Налаштування постів -->
+                <div class="form-section">
+                    <h4><i class="fas fa-edit"></i> Налаштування постів</h4>
+                    
+                    <div class="form-group">
+                        <label for="usePosts">Робити пости у себе на сторінці</label>
+                        <select id="usePosts" name="usePosts">
+                            <option value="no">Ні</option>
+                            <option value="yes">Так</option>
+                        </select>
+                        <small>Пост у тому ж потоці що й коментар</small>
+                    </div>
+                    
+                    <div class="form-group" id="postSettingsGroup" style="display: none;">
+                        <label for="postPercentage">Відсоток ймовірності поста</label>
+                        <input type="number" id="postPercentage" name="postPercentage" 
+                               value="50" min="1" max="100" step="1">
+                        <small>Відсоток з якою ймовірністю буде зроблено пост</small>
+                        
+                        <label for="postPrompt">Промпт для постів</label>
+                        <textarea id="postPrompt" name="postPrompt" rows="3" 
+                                  placeholder="Create an original post about cryptocurrencies based on the trend...">Create an original post about cryptocurrencies and blockchain. Use a current topic or trend as inspiration. Add your own opinion or analysis. Use the hashtags #crypto #blockchain #Bitcoin #DeFi. Maximum 150 characters.</textarea>
+                        <small>Промпт + текст поста = готовий пост</small>
+                    </div>
+                </div>
+            
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeGroupModal()">Скасувати</button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn" onclick="handleSubmitClick()">Створити проєкт</button>
+            </div>
+            </form>
+    </div>
+</div>
+
+    <!-- Модальне вікно перегляду логів -->
+    <div id="logsModal" class="modal">
+        <div class="modal-content">
+        <div class="modal-header">
+                <h3 id="logsModalTitle">Звіти проєкту</h3>
+                <span class="close" onclick="closeLogsModal()">&times;</span>
+        </div>
+            
+            <div class="logs-content">
+                <div class="logs-info">
+                    <p><strong>Посилання на Google таблицю з звітами:</strong></p>
+                    <div class="google-sheet-link">
+                        <a id="logsSheetLink" href="#" target="_blank" class="btn btn-primary">
+                            <i class="fas fa-external-link-alt"></i> Відкрити таблицю звітів
+                        </a>
+                    </div>
+                    <div class="sheet-info">
+                        <p><small>Клікніть на посилання, щоб відкрити Google таблицю з звітами дій цього проєкту</small></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript для управління сторінкою -->
+<script>
+let currentEditingGroup = null;
+let groupsData = [];
+let isSubmitting = false; // Захист від повторних запитів
+
+// Завантаження сторінки
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Сторінка завантажена, ініціалізація...');
+    
+    // Даємо час DOM повністю завантажитися
+    setTimeout(() => {
+        initializePage();
+    }, 500);
+});
+
+// Логіка для поля картинок
+function toggleImagesFolder() {
+    const useImages = document.getElementById('useImages');
+    const imagesFolderGroup = document.getElementById('imagesFolderGroup');
+    
+    if (useImages.value === 'yes') {
+        imagesFolderGroup.style.display = 'block';
+    } else {
+        imagesFolderGroup.style.display = 'none';
+    }
+}
+
+// Логіка для поля репостів
+function toggleRepostSettings() {
+    const useReposts = document.getElementById('useReposts');
+    const repostSettingsGroup = document.getElementById('repostSettingsGroup');
+    
+    if (useReposts.value === 'yes') {
+        repostSettingsGroup.style.display = 'block';
+    } else {
+        repostSettingsGroup.style.display = 'none';
+    }
+}
+
+// Логіка для поля постів
+function togglePostSettings() {
+    const usePosts = document.getElementById('usePosts');
+    const postSettingsGroup = document.getElementById('postSettingsGroup');
+    
+    if (usePosts.value === 'yes') {
+        postSettingsGroup.style.display = 'block';
+    } else {
+        postSettingsGroup.style.display = 'none';
+    }
+}
+
+function initializePage() {
+    console.log('Початок ініціалізації сторінки...');
+    
+    // Перевіряємо чи всі необхідні елементи існують
+    const requiredElements = [
+        'groupForm',
+        'groupName',
+        'accountsGoogleSheet',
+        'logsGoogleSheet',
+        'delayBetweenActionsMin',
+        'delayBetweenActionsMax',
+        'delayBetweenLikesMin',
+        'delayBetweenLikesMax',
+        'delayBetweenRetweetsMin',
+        'delayBetweenRetweetsMax',
+        'delayBetweenCommentsMin',
+        'delayBetweenCommentsMax',
+        'delayBetweenPostsMin',
+        'delayBetweenPostsMax',
+
+        'searchKeywords',
+        'postTopics',
+        'useImages',
+        'imagesFolder',
+        'searchFormat',
+        'minFollowers',
+        'minLikes',
+        'minReposts',
+        'minReplies',
+        'searchHours',
+        'commentsTotalLimit',
+        'commentsDailyLimit',
+        'commentsHourlyLimit',
+        'commentsPerPostMin',
+        'commentsPerPostMax',
+        'commentIntervalMin',
+        'commentIntervalMax',
+        'commentLikesMin',
+        'commentLikesMax',
+        'commentRepostsMin',
+        'commentRepostsMax',
+        'commentViewsMin',
+        'commentViewsMax',
+        'commentPrompt',
+        'useReposts',
+        'repostPercentage',
+        'repostPrompt',
+        'usePosts',
+        'postPercentage',
+        'postPrompt'
+    ];
+    
+    const missingElements = [];
+    for (const elementId of requiredElements) {
+        const element = document.getElementById(elementId);
+        if (!element) {
+            missingElements.push(elementId);
+        } else {
+            console.log(`Елемент ${elementId} знайдено:`, element);
+        }
+    }
+    
+    if (missingElements.length > 0) {
+        console.error('Відсутні елементи форми:', missingElements);
+        showNotification('Помилка: не всі елементи форми завантажені', 'error');
+        return;
+    }
+    
+    console.log('Всі елементи форми знайдено');
+    
+    // Додатково перевіряємо форму
+    const form = document.getElementById('groupForm');
+    if (form) {
+        console.log('Форма знайдена в initializePage:', form);
+        
+        // Перевіряємо чи форма має правильні атрибути
+        if (!form.method) {
+            form.method = 'post';
+            console.log('Встановлено method = post');
+        }
+        if (!form.action) {
+            form.action = 'javascript:void(0);';
+            console.log('Встановлено action = javascript:void(0);');
+        }
+    }
+    
+    // Налаштовуємо валідацію форми
+    setupFormValidation();
+    
+    // Налаштовуємо додаткові обробники
+    setupAdditionalHandlers();
+    
+    // Завантажуємо групи
+    loadGroups();
+    
+    console.log('Ініціалізація завершена');
+}
+
+// Функція для перемикання стану групи (запуск/зупинка)
+async function toggleGroup(groupName, currentStatus) {
+    try {
+        const action = currentStatus ? 'stop' : 'start';
+        const actionText = currentStatus ? 'зупинки' : 'запуску';
+        
+        console.log(`🔄 ${actionText} групи: ${groupName}`);
+        showLoadingIndicator(`${actionText} проєкту: ${groupName}`);
+        
+        const response = await fetch(`/api/shilling/groups/${encodeURIComponent(groupName)}/${action}`, {
+            method: 'POST'
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            if (result.success) {
+                showNotification(`Проєкт ${groupName} успішно ${action === 'start' ? 'запущена' : 'зупинена'}`, 'success');
+                
+                // Оновлюємо статус групи після зміни
+                setTimeout(() => refreshGroupStatus(groupName), 1000);
+            } else {
+                throw new Error(result.error || `Помилка ${actionText} проєкту`);
+            }
+        } else {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `Помилка ${actionText} проєкту`);
+        }
+        
+    } catch (error) {
+        console.error(`Помилка ${actionText} проєкту:`, error);
+        showNotification(`Помилка ${actionText} проєкту: ${error.message}`, 'error');
+    } finally {
+        hideLoadingIndicator();
+    }
+}
+
+// Оновлена функція loadGroups з правильним відображенням статусу
+async function loadGroups() {
+    try {
+        const response = await fetch('/api/shilling/groups');
+        if (response.ok) {
+            groupsData = await response.json();
+            displayGroups(groupsData);
+            
+            // Оновлюємо кнопки після відображення груп
+            setTimeout(updateGroupButtons, 100);
+            
+            // Оновлюємо статус всіх груп після завантаження
+            setTimeout(() => {
+                if (groupsData && groupsData.length > 0) {
+                    groupsData.forEach(group => {
+                        refreshGroupStatus(group.group_name);
+                    });
+                }
+            }, 2000);
+        } else {
+            showNotification('Помилка завантаження проєктів', 'error');
+        }
+    } catch (error) {
+        console.error('Помилка завантаження проєктів:', error);
+        showNotification('Помилка завантаження проєктів', 'error');
+    }
+}
+
+// Відображення груп
+function displayGroups(groups) {
+    const grid = document.getElementById('groups-grid');
+    
+    if (groups.length === 0) {
+        grid.innerHTML = '<div class="no-groups"><p>Проєктів ще не створено</p></div>';
+        return;
+    }
+    
+    grid.innerHTML = groups.map(group => `
+        <div class="group-card ${group.is_running ? 'running' : 'stopped'}" data-group-name="${group.group_name}">
+            <div class="group-header">
+                <h4>${group.group_name}</h4>
+                <div class="group-status ${group.is_running ? 'status-running' : 'status-stopped'}">
+                    <i class="fas fa-${group.is_running ? 'play' : 'stop'}"></i>
+                    ${group.is_running ? 'Запущена' : 'Зупинена'}
+                </div>
+            </div>
+            
+            <div class="group-info">
+                <p><strong>Створено:</strong> ${formatDate(group.created_at)}</p>
+                <p><strong>Оновлено:</strong> ${formatDate(group.updated_at)}</p>
+            </div>
+            
+            <div class="group-actions">
+                <button class="btn btn-sm ${group.is_running ? 'btn-warning' : 'btn-success'}" 
+                        onclick="toggleGroup('${group.group_name}', ${group.is_running})">
+                    <i class="fas fa-${group.is_running ? 'pause' : 'play'}"></i>
+                    ${group.is_running ? 'Зупинити' : 'Запустити'}
+                </button>
+                
+                <button class="btn btn-sm btn-info" onclick="viewGroupLogsAsync('${group.group_name}')">
+                    <i class="fas fa-list"></i> Звіти
+                </button>
+                
+                <button class="btn btn-sm btn-primary" onclick="editGroupAsync('${group.group_name}')">
+                    <i class="fas fa-edit"></i> Редагувати
+                </button>
+                
+                <button class="btn btn-sm btn-danger" onclick="deleteGroup('${group.group_name}')">
+                    <i class="fas fa-trash"></i> Видалити
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Відкриття модального вікна створення групи
+function openCreateGroupModal() {
+    console.log('Відкриття модального вікна створення групи...');
+    
+    try {
+        const modalTitle = document.getElementById('modalTitle');
+        const submitBtn = document.getElementById('submitBtn');
+        const groupForm = document.getElementById('groupForm');
+        const groupModal = document.getElementById('groupModal');
+        
+        if (!modalTitle || !submitBtn || !groupForm || !groupModal) {
+            console.error('Не знайдено необхідні елементи модального вікна');
+            showNotification('Помилка: не знайдено елементи модального вікна', 'error');
+            return;
+        }
+        
+        currentEditingGroup = null;
+        modalTitle.textContent = 'Створити новий проєкт';
+        submitBtn.textContent = 'Створити проєкт';
+        groupForm.reset();
+        groupModal.style.display = 'block';
+        
+        console.log('Модальне вікно успішно відкрито');
+        
+    } catch (error) {
+        console.error('Помилка відкриття модального вікна:', error);
+        showNotification('Помилка відкриття модального вікна: ' + error.message, 'error');
+    }
+}
+
+// Закриття модального вікна
+function closeGroupModal() {
+    document.getElementById('groupModal').style.display = 'none';
+    currentEditingGroup = null;
+}
+
+// Редагування групи
+async function editGroup(groupName) {
+    try {
+        console.log(`🔄 Завантаження даних проєкту: ${groupName}`);
+        
+        // Показуємо індикатор завантаження
+        showLoadingIndicator(`Завантаження проєкту: ${groupName}`);
+        
+        // Використовуємо Promise.race для таймауту
+        const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Timeout')), 10000)
+        );
+        
+        const fetchPromise = fetch(`/api/shilling/groups/${encodeURIComponent(groupName)}`);
+        
+        const response = await Promise.race([fetchPromise, timeoutPromise]);
+        
+        if (response.ok) {
+            const groupData = await response.json();
+            currentEditingGroup = groupName;
+            
+            // Заповнюємо форму даними
+            fillFormWithGroupData(groupData);
+            
+            document.getElementById('modalTitle').textContent = `Редагувати проєкт: ${groupName}`;
+            document.getElementById('submitBtn').textContent = 'Оновити проєкт';
+            document.getElementById('groupModal').style.display = 'block';
+            
+            console.log(`✅ Група ${groupName} успішно завантажена`);
+            showNotification(`Проєкт ${groupName} завантажена для редагування`, 'success');
+            
+            // Оновлюємо статус групи після завантаження
+            setTimeout(() => refreshGroupStatus(groupName), 500);
+        } else {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Помилка завантаження даних проєкту');
+        }
+    } catch (error) {
+        console.error('Помилка редагування проєкту:', error);
+        
+        if (error.message === 'Timeout') {
+            showNotification('Таймаут завантаження проєкту. Спробуйте ще раз.', 'warning');
+        } else {
+            showNotification(`Помилка редагування проєкту: ${error.message}`, 'error');
+        }
+    } finally {
+        // Приховуємо індикатор завантаження
+        hideLoadingIndicator();
+    }
+}
+
+// Заповнення форми даними групи
+function fillFormWithGroupData(groupData) {
+    // Безпечне встановлення значень з перевіркою на існування елементів
+    const safeSetValue = (id, value) => {
+        const element = document.getElementById(id);
+        if (element && value !== undefined && value !== null) {
+            element.value = value;
+        }
+    };
+    
+    const safeSetArrayValue = (id, array) => {
+        const element = document.getElementById(id);
+        if (element && Array.isArray(array)) {
+            element.value = array.join(', ');
+        }
+    };
+    
+    const safeSetObjectValue = (id, obj, key) => {
+        const element = document.getElementById(id);
+        if (element && obj && obj[key] !== undefined && obj[key] !== null) {
+            element.value = obj[key];
+        }
+    };
+    
+    // Основні поля
+    safeSetValue('groupName', groupData.group_name);
+    safeSetValue('accountsGoogleSheet', groupData.accounts_google_sheet);
+    safeSetValue('logsGoogleSheet', groupData.logs_google_sheet);
+    
+    // Затримки
+    if (groupData.delays) {
+        safeSetObjectValue('delayBetweenActionsMin', groupData.delays.between_actions, 'min');
+        safeSetObjectValue('delayBetweenActionsMax', groupData.delays.between_actions, 'max');
+        safeSetObjectValue('delayBetweenLikesMin', groupData.delays.between_likes, 'min');
+        safeSetObjectValue('delayBetweenLikesMax', groupData.delays.between_likes, 'max');
+        safeSetObjectValue('delayBetweenRetweetsMin', groupData.delays.between_retweets, 'min');
+        safeSetObjectValue('delayBetweenRetweetsMax', groupData.delays.between_retweets, 'max');
+        safeSetObjectValue('delayBetweenCommentsMin', groupData.delays.between_comments, 'min');
+        safeSetObjectValue('delayBetweenCommentsMax', groupData.delays.between_comments, 'max');
+        safeSetObjectValue('delayBetweenPostsMin', groupData.delays.between_posts, 'min');
+        safeSetObjectValue('delayBetweenPostsMax', groupData.delays.between_posts, 'max');
+    }
+    
+
+    
+    // Ключові слова та теми
+    safeSetArrayValue('searchKeywords', groupData.search_keywords);
+    safeSetArrayValue('postTopics', groupData.post_topics);
+    
+    // Нові фільтри: Картинки та пошук
+    if (groupData.use_images !== undefined) {
+        safeSetValue('useImages', groupData.use_images ? 'yes' : 'no');
+        toggleImagesFolder(); // Оновлюємо видимість поля папки
+    }
+    safeSetValue('imagesFolder', groupData.images_folder);
+    safeSetValue('searchFormat', groupData.search_format);
+    
+    // Нові фільтри: Фільтри пошуку
+    safeSetValue('minFollowers', groupData.min_followers);
+    safeSetValue('minLikes', groupData.min_likes);
+    safeSetValue('minReposts', groupData.min_reposts);
+    safeSetValue('minReplies', groupData.min_replies);
+    safeSetValue('searchHours', groupData.search_hours);
+    
+    // Нові фільтри: Налаштування коментарів
+    safeSetValue('commentsTotalLimit', groupData.comments_total_limit);
+    safeSetValue('commentsDailyLimit', groupData.comments_daily_limit);
+    safeSetValue('commentsHourlyLimit', groupData.comments_hourly_limit);
+    
+    if (groupData.comments_per_post) {
+        safeSetObjectValue('commentsPerPostMin', groupData.comments_per_post, 'min');
+        safeSetObjectValue('commentsPerPostMax', groupData.comments_per_post, 'max');
+    }
+    
+    if (groupData.comment_interval) {
+        safeSetObjectValue('commentIntervalMin', groupData.comment_interval, 'min');
+        safeSetObjectValue('commentIntervalMax', groupData.comment_interval, 'max');
+    }
+    
+    if (groupData.comment_engagement) {
+        if (groupData.comment_engagement.likes) {
+            safeSetObjectValue('commentLikesMin', groupData.comment_engagement.likes, 'min');
+            safeSetObjectValue('commentLikesMax', groupData.comment_engagement.likes, 'max');
+        }
+        if (groupData.comment_engagement.reposts) {
+            safeSetObjectValue('commentRepostsMin', groupData.comment_engagement.reposts, 'min');
+            safeSetObjectValue('commentRepostsMax', groupData.comment_engagement.reposts, 'max');
+        }
+        if (groupData.comment_engagement.views) {
+            safeSetObjectValue('commentViewsMin', groupData.comment_engagement.views, 'min');
+            safeSetObjectValue('commentViewsMax', groupData.comment_engagement.views, 'max');
+        }
+    }
+    
+    safeSetValue('commentPrompt', groupData.comment_prompt);
+    
+    // Нові фільтри: Налаштування репостів
+    if (groupData.use_reposts !== undefined) {
+        safeSetValue('useReposts', groupData.use_reposts ? 'yes' : 'no');
+        toggleRepostSettings(); // Оновлюємо видимість полів
+    }
+    safeSetValue('repostPercentage', groupData.repost_percentage);
+    safeSetValue('repostPrompt', groupData.repost_prompt);
+    
+    // Нові фільтри: Налаштування постів
+    if (groupData.use_posts !== undefined) {
+        safeSetValue('usePosts', groupData.use_posts ? 'yes' : 'no');
+        togglePostSettings(); // Оновлюємо видимість полів
+    }
+    safeSetValue('postPercentage', groupData.post_percentage);
+    safeSetValue('postPrompt', groupData.post_prompt);
+}
+
+// Налаштування додаткових обробників
+function setupAdditionalHandlers() {
+    console.log('Налаштування додаткових обробників...');
+    
+    // Обробник для поля картинок
+    const useImages = document.getElementById('useImages');
+    if (useImages) {
+        useImages.addEventListener('change', toggleImagesFolder);
+        // Встановлюємо початковий стан
+        toggleImagesFolder();
+    }
+    
+    // Обробник для поля репостів
+    const useReposts = document.getElementById('useReposts');
+    if (useReposts) {
+        useReposts.addEventListener('change', toggleRepostSettings);
+        // Встановлюємо початковий стан
+        toggleRepostSettings();
+    }
+    
+    // Обробник для поля постів
+    const usePosts = document.getElementById('usePosts');
+    if (usePosts) {
+        usePosts.addEventListener('change', togglePostSettings);
+        // Встановлюємо початковий стан
+        togglePostSettings();
+    }
+    
+    // Додаємо обробники для всіх полів з числовими значеннями
+    const numericFields = [
+        'delayBetweenActionsMin', 'delayBetweenActionsMax',
+        'delayBetweenLikesMin', 'delayBetweenLikesMax',
+        'delayBetweenRetweetsMin', 'delayBetweenRetweetsMax',
+        'delayBetweenCommentsMin', 'delayBetweenCommentsMax',
+        'delayBetweenPostsMin', 'delayBetweenPostsMax',
+        'minFollowers', 'minLikes', 'minReposts', 'minReplies',
+        'searchHours', 'commentsTotalLimit', 'commentsDailyLimit',
+        'commentsHourlyLimit', 'commentsPerPostMin', 'commentsPerPostMax',
+        'commentIntervalMin', 'commentIntervalMax', 'commentLikesMin',
+        'commentLikesMax', 'commentRepostsMin', 'commentRepostsMax',
+        'commentViewsMin', 'commentViewsMax', 'repostPercentage',
+        'postPercentage'
+    ];
+    
+    numericFields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.addEventListener('input', function() {
+                // Перевіряємо чи значення є цілим числом
+                const value = this.value;
+                if (value && !/^\d+$/.test(value)) {
+                    this.value = value.replace(/\D/g, '');
+                }
+            });
+        }
+    });
+}
+
+// Налаштування валідації форми
+function setupFormValidation() {
+    console.log('Налаштування валідації форми...');
+    
+    const form = document.getElementById('groupForm');
+    if (!form) {
+        console.error('Форма не знайдена!');
+        return;
+    }
+    
+    // Додаємо обробник події submit як запасний варіант
+    const submitHandler = async function(e) {
+        e.preventDefault();
+        console.log('Форма відправлена через submit обробник!');
+        
+        // Захист від повторних запитів
+        if (isSubmitting) {
+            console.log('Форма вже відправляється, ігноруємо повторний запит');
+            return;
+        }
+        
+        await handleFormSubmit();
+    };
+    
+    // Додаємо обробник submit
+    form.addEventListener('submit', submitHandler);
+    
+    // Додаємо обробник через onsubmit як запасний варіант
+    form.onsubmit = submitHandler;
+    
+    console.log('Валідація форми налаштована, обробник submit додано');
+    
+    console.log('Валідація форми налаштована');
+}
+
+// Валідація форми
+function validateForm() {
+    console.log('Початок валідації форми...');
+    
+    const form = document.getElementById('groupForm');
+    if (!form) {
+        console.error('Форма не знайдена для валідації!');
+        return false;
+    }
+    
+    // Перевіряємо чи всі обов'язкові поля заповнені
+    if (!form.checkValidity()) {
+        console.log('Базова валідація HTML не пройшла');
+        form.reportValidity();
+        return false;
+    }
+    
+    console.log('Базова валідація HTML пройшла');
+    
+    // Безпечна валідація числових полів
+    const safeValidateRange = (minFieldId, maxFieldId, fieldName) => {
+        const minElement = document.getElementById(minFieldId);
+        const maxElement = document.getElementById(maxFieldId);
+        
+        if (!minElement || !maxElement) {
+            console.error(`Елемент не знайдено: ${minFieldId} або ${maxFieldId}`);
+            showNotification(`Помилка валідації: елемент ${minFieldId} або ${maxFieldId} не знайдено`, 'error');
+            return false;
+        }
+        
+        const min = parseInt(minElement.value);
+        const max = parseInt(maxElement.value);
+        
+        // Перевіряємо чи значення є цілими числами
+        if (isNaN(min) || isNaN(max)) {
+            showNotification(`Значення мають бути цілими числами для ${fieldName}`, 'error');
+            return false;
+        }
+        
+        // Перевіряємо чи значення не є від'ємними
+        if (min < 0 || max < 0) {
+            showNotification(`Значення не можуть бути від'ємними для ${fieldName}`, 'error');
+            return false;
+        }
+        
+        // Для затримок: мінімальне має бути менше максимального
+        if (minFieldId.includes('delay')) {
+            if (min >= max) {
+                showNotification(`Мінімальне значення має бути менше максимального для ${fieldName}`, 'error');
+                return false;
+            }
+        } else {
+            // Для дій: мінімальне має бути менше або дорівнювати максимальному
+            if (min > max) {
+                showNotification(`Мінімальне значення має бути менше або дорівнювати максимальному для ${fieldName}`, 'error');
+                return false;
+            }
+        }
+        
+        return true;
+    };
+    
+    // Валідація затримок
+    const delays = [
+        ['delayBetweenActionsMin', 'delayBetweenActionsMax', 'затримок між діями'],
+        ['delayBetweenLikesMin', 'delayBetweenLikesMax', 'затримок між лайками'],
+        ['delayBetweenRetweetsMin', 'delayBetweenRetweetsMax', 'затримок між ретвітами'],
+        ['delayBetweenCommentsMin', 'delayBetweenCommentsMax', 'затримок між коментарями'],
+        ['delayBetweenPostsMin', 'delayBetweenPostsMax', 'затримок між постами']
+    ];
+    
+    // Валідація затримок
+    for (const [minField, maxField, fieldName] of delays) {
+        if (!safeValidateRange(minField, maxField, fieldName)) {
+            return false;
+        }
+    }
+    
+    console.log('Валідація форми пройшла успішно');
+    return true;
+}
+
+// Збір даних з форми
+function collectFormData() {
+    console.log('Збір даних з форми...');
+    
+    try {
+        const groupNameElement = document.getElementById('groupName');
+        const accountsSheetElement = document.getElementById('accountsGoogleSheet');
+        const logsSheetElement = document.getElementById('logsGoogleSheet');
+        
+        if (!groupNameElement || !accountsSheetElement || !logsSheetElement) {
+            throw new Error('Не знайдено обов\'язкові поля форми');
+        }
+        
+        const data = {
+            group_name: groupNameElement.value,
+            accounts_google_sheet: accountsSheetElement.value,
+            logs_google_sheet: logsSheetElement.value,
+
+            delays: {
+                between_actions: {
+                    min: parseInt(document.getElementById('delayBetweenActionsMin').value) || 30,
+                    max: parseInt(document.getElementById('delayBetweenActionsMax').value) || 60
+                },
+                between_likes: {
+                    min: parseInt(document.getElementById('delayBetweenLikesMin').value) || 15,
+                    max: parseInt(document.getElementById('delayBetweenLikesMax').value) || 45
+                },
+                between_retweets: {
+                    min: parseInt(document.getElementById('delayBetweenRetweetsMin').value) || 60,
+                    max: parseInt(document.getElementById('delayBetweenRetweetsMax').value) || 180
+                },
+                between_comments: {
+                    min: parseInt(document.getElementById('delayBetweenCommentsMin').value) || 90,
+                    max: parseInt(document.getElementById('delayBetweenCommentsMax').value) || 240
+                },
+                between_posts: {
+                    min: parseInt(document.getElementById('delayBetweenPostsMin').value) || 300,
+                    max: parseInt(document.getElementById('delayBetweenPostsMax').value) || 600
+                }
+            },
+            actions_per_run: {
+                likes: {
+                    min: 5,
+                    max: 10
+                },
+                retweets: {
+                    min: 2,
+                    max: 7
+                },
+                comments: {
+                    min: 2,
+                    max: 6
+                },
+                posts: {
+                    min: 1,
+                    max: 1
+                }
+            },
+            search_keywords: document.getElementById('searchKeywords').value.split(',').map(k => k.trim()).filter(k => k),
+            post_topics: document.getElementById('postTopics').value.split(',').map(t => t.trim()).filter(t => t),
+            
+            // Нові фільтри: Картинки та пошук
+            use_images: document.getElementById('useImages').value === 'yes',
+            images_folder: document.getElementById('imagesFolder').value || '',
+            search_format: document.getElementById('searchFormat').value,
+            
+            // Нові фільтри: Фільтри пошуку
+            min_followers: parseInt(document.getElementById('minFollowers').value) || 1000,
+            min_likes: parseInt(document.getElementById('minLikes').value) || 5,
+            min_reposts: parseInt(document.getElementById('minReposts').value) || 2,
+            min_replies: parseInt(document.getElementById('minReplies').value) || 1,
+            search_hours: parseInt(document.getElementById('searchHours').value) || 24,
+            
+            // Нові фільтри: Налаштування коментарів
+            comments_total_limit: parseInt(document.getElementById('commentsTotalLimit').value) || 2000,
+            comments_daily_limit: parseInt(document.getElementById('commentsDailyLimit').value) || 100,
+            comments_hourly_limit: parseInt(document.getElementById('commentsHourlyLimit').value) || 10,
+            comments_per_post: {
+                min: parseInt(document.getElementById('commentsPerPostMin').value) || 1,
+                max: parseInt(document.getElementById('commentsPerPostMax').value) || 3
+            },
+            comment_interval: {
+                min: parseInt(document.getElementById('commentIntervalMin').value) || 15,
+                max: parseInt(document.getElementById('commentIntervalMax').value) || 30
+            },
+            comment_engagement: {
+                likes: {
+                    min: parseInt(document.getElementById('commentLikesMin').value) || 1,
+                    max: parseInt(document.getElementById('commentLikesMax').value) || 3
+                },
+                reposts: {
+                    min: parseInt(document.getElementById('commentRepostsMin').value) || 2,
+                    max: parseInt(document.getElementById('commentRepostsMax').value) || 5
+                },
+                views: {
+                    min: parseInt(document.getElementById('commentViewsMin').value) || 55,
+                    max: parseInt(document.getElementById('commentViewsMax').value) || 100
+                }
+            },
+            comment_prompt: document.getElementById('commentPrompt').value,
+            
+            // Нові фільтри: Налаштування репостів
+            use_reposts: document.getElementById('useReposts').value === 'yes',
+            repost_percentage: parseInt(document.getElementById('repostPercentage').value) || 50,
+            repost_prompt: document.getElementById('repostPrompt').value,
+            
+            // Нові фільтри: Налаштування постів
+            use_posts: document.getElementById('usePosts').value === 'yes',
+            post_percentage: parseInt(document.getElementById('postPercentage').value) || 50,
+            post_prompt: document.getElementById('postPrompt').value
+        };
+        
+        console.log('Дані зібрані успішно:', data);
+        console.log('Перевірка основних полів:');
+        console.log('- group_name:', data.group_name);
+        console.log('- accounts_google_sheet:', data.accounts_google_sheet);
+        console.log('- logs_google_sheet:', data.logs_google_sheet);
+        console.log('- search_keywords:', data.search_keywords);
+        console.log('- post_topics:', data.post_topics);
+        console.log('- use_images:', data.use_images);
+        console.log('- search_format:', data.search_format);
+        console.log('- min_followers:', data.min_followers);
+        console.log('- comments_total_limit:', data.comments_total_limit);
+        console.log('- use_reposts:', data.use_reposts);
+        console.log('- use_posts:', data.use_posts);
+        return data;
+        
+    } catch (error) {
+        console.error('Помилка збору даних з форми:', error);
+        throw new Error('Помилка збору даних з форми: ' + error.message);
+    }
+}
+
+// Запуск групи
+async function startGroup(groupName) {
+    try {
+        const response = await fetch(`/api/shilling/groups/${encodeURIComponent(groupName)}/start`, {
+            method: 'POST'
+        });
+        
+        if (response.ok) {
+            showNotification(`Проєкт '${groupName}' запущена`, 'success');
+            loadGroups();
+        } else {
+            const error = await response.json();
+            showNotification(error.message || 'Помилка запуску проєкту', 'error');
+        }
+    } catch (error) {
+        console.error('Помилка запуску проєкту:', error);
+        showNotification('Помилка запуску проєкту', 'error');
+    }
+}
+
+// Зупинка групи
+async function stopGroup(groupName) {
+    try {
+        const response = await fetch(`/api/shilling/groups/${encodeURIComponent(groupName)}/stop`, {
+            method: 'POST'
+        });
+        
+        if (response.ok) {
+            showNotification(`Проєкт '${groupName}' зупинена`, 'success');
+            loadGroups();
+        } else {
+            const error = await response.json();
+            showNotification(error.message || 'Помилка зупинки проєкту', 'error');
+        }
+    } catch (error) {
+        console.error('Помилка зупинки проєкту:', error);
+        showNotification('Помилка зупинки проєкту', 'error');
+    }
+}
+
+// Видалення групи
+async function deleteGroup(groupName) {
+    if (!confirm(`Ви впевнені, що хочете видалити проєкт '${groupName}'?`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/shilling/groups/${encodeURIComponent(groupName)}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+            showNotification(`Проєкт '${groupName}' видалена`, 'success');
+                    loadGroups();
+                } else {
+            const error = await response.json();
+            showNotification(error.message || 'Помилка видалення проєкту', 'error');
+                }
+            } catch (error) {
+                console.error('Помилка видалення проєкту:', error);
+                showNotification('Помилка видалення проєкту', 'error');
+            }
+}
+
+// Перегляд логів групи
+async function viewGroupLogs(groupName) {
+    try {
+        console.log(`🔄 Завантаження звітів проєкту: ${groupName}`);
+        
+        // Показуємо індикатор завантаження
+        showLoadingIndicator(`Завантаження звітів: ${groupName}`);
+        
+        // Використовуємо Promise.race для таймауту
+        const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Timeout')), 10000)
+        );
+        
+        const fetchPromise = fetch(`/api/shilling/groups/${encodeURIComponent(groupName)}`);
+        
+        const response = await Promise.race([fetchPromise, timeoutPromise]);
+        
+        if (response.ok) {
+            const groupData = await response.json();
+            displayGroupLogs(groupName, groupData);
+            document.getElementById('logsModal').style.display = 'block';
+            
+            console.log(`✅ Звіти проєкту ${groupName} успішно завантажені`);
+            showNotification(`Звіти проєкту ${groupName} завантажені`, 'success');
+            
+            // Оновлюємо статус групи після завантаження
+            setTimeout(() => refreshGroupStatus(groupName), 500);
+        } else {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Помилка завантаження звітів проєкту');
+        }
+    } catch (error) {
+        console.error('Помилка завантаження звітів проєкту:', error);
+        
+        if (error.message === 'Timeout') {
+            showNotification('Таймаут завантаження звітів. Спробуйте ще раз.', 'warning');
+        } else {
+            showNotification(`Помилка завантаження звітів: ${error.message}`, 'error');
+        }
+    } finally {
+        // Приховуємо індикатор завантаження
+        hideLoadingIndicator();
+    }
+}
+
+// Відображення посилання на таблицю логів групи
+function displayGroupLogs(groupName, groupData) {
+    document.getElementById('logsModalTitle').textContent = `Звіти проєкту: ${groupName}`;
+    
+    // Отримуємо посилання на таблицю логів
+    const logsSheetLink = document.getElementById('logsSheetLink');
+    const logsGoogleSheet = groupData.logs_google_sheet;
+    
+    if (logsGoogleSheet) {
+        logsSheetLink.href = logsGoogleSheet;
+        logsSheetLink.style.display = 'inline-block';
+    } else {
+        logsSheetLink.style.display = 'none';
+        showNotification('Посилання на таблицю звітів не знайдено', 'warning');
+    }
+}
+
+// Закриття модального вікна логів
+function closeLogsModal() {
+    document.getElementById('logsModal').style.display = 'none';
+}
+
+// Форматування дати
+function formatDate(dateString) {
+    if (!dateString) return 'Невідомо';
+    
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleString('uk-UA');
+    } catch (error) {
+        return dateString;
+    }
+}
+
+// Показ повідомлень
+function showNotification(message, type = 'info') {
+    // Створюємо елемент повідомлення
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `
+        <div class="notification-content">
+            <i class="fas fa-${getNotificationIcon(type)}"></i>
+            <span>${message}</span>
+        </div>
+        <button class="notification-close" onclick="this.parentElement.remove()" title="Закрити">&times;</button>
+    `;
+    
+    // Додаємо до сторінки
+    document.body.appendChild(notification);
+    
+    // Автоматично видаляємо через 10 секунд (збільшено з 5 до 10)
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.remove();
+        }
+    }, 10000);
+    
+    // Логуємо в консоль
+    console.log(`${type.toUpperCase()}: ${message}`);
+}
+
+// Отримання іконки для типу повідомлення
+function getNotificationIcon(type) {
+    switch (type) {
+        case 'success': return 'check-circle';
+        case 'error': return 'exclamation-circle';
+        case 'warning': return 'exclamation-triangle';
+        case 'info': 
+        default: return 'info-circle';
+    }
+}
+
+// Обробник кліку на кнопку submit
+function handleSubmitClick() {
+    console.log('Кнопка submit натиснута через onclick');
+    
+    // Захист від повторних запитів
+    if (isSubmitting) {
+        console.log('Форма вже відправляється, ігноруємо повторний запит');
+        return;
+    }
+    
+    // Знаходимо форму
+    const form = document.getElementById('groupForm');
+    if (!form) {
+        console.error('Форма не знайдена в handleSubmitClick!');
+        return;
+    }
+    
+    console.log('Форма знайдена в handleSubmitClick:', form);
+    
+    // Тригеримо submit форми
+    try {
+        form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+        console.log('Submit подія тригерена');
+    } catch (error) {
+        console.error('Помилка тригеру submit події:', error);
+        
+        // Якщо не вдалося тригерити подію, викликаємо обробку вручну
+        console.log('Спроба обробки форми вручну...');
+        handleFormSubmit();
+    }
+}
+
+// Обробка форми вручну
+async function handleFormSubmit() {
+    console.log('Обробка форми вручну...');
+    
+    // Захист від повторних запитів
+    if (isSubmitting) {
+        console.log('Форма вже відправляється, ігноруємо повторний запит');
+        return;
+    }
+    
+    if (!validateForm()) {
+        console.log('Валідація не пройшла');
+        return;
+    }
+    
+    // Встановлюємо флаг відправки
+    isSubmitting = true;
+    
+    // Блокуємо кнопку submit
+    const submitButton = document.querySelector('#groupModal button[type="submit"]');
+    if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.textContent = 'Збереження...';
+    }
+    
+    try {
+        console.log('Валідація пройшла, збираємо дані...');
+        const formData = collectFormData();
+        console.log('Дані форми:', formData);
+        
+        const url = currentEditingGroup 
+            ? `/api/shilling/groups/${encodeURIComponent(currentEditingGroup)}`
+            : '/api/shilling/groups';
+        
+        const method = currentEditingGroup ? 'PUT' : 'POST';
+        
+        console.log(`Відправляємо ${method} запит на ${url}`);
+        
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        console.log('Отримано відповідь:', response.status, response.statusText);
+        
+        if (response.ok) {
+            const result = await response.json();
+            console.log('Успішна відповідь:', result);
+            showNotification(
+                currentEditingGroup ? 'Проєкт оновлено' : 'Проєкт створено', 
+                'success'
+            );
+            closeGroupModal();
+            loadGroups();
+        } else {
+            const error = await response.json();
+            console.error('Помилка відповіді:', error);
+            showNotification(error.message || 'Помилка збереження проєкту', 'error');
+        }
+    } catch (error) {
+        console.error('Помилка збереження проєкту:', error);
+        showNotification('Помилка збереження проєкту: ' + error.message, 'error');
+    } finally {
+        // Скидаємо флаг відправки
+        isSubmitting = false;
+        
+        // Розблоковуємо кнопку submit
+        if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.textContent = currentEditingGroup ? 'Оновити проєкт' : 'Створити проєкт';
+        }
+    }
+}
+
+// Закриття модальних вікон при кліку поза ними
+window.onclick = function(event) {
+    const groupModal = document.getElementById('groupModal');
+    const logsModal = document.getElementById('logsModal');
+    
+    if (event.target === groupModal) {
+        closeGroupModal();
+    }
+    
+    if (event.target === logsModal) {
+        closeLogsModal();
+    }
+}
+
+// Функція для показу індикатора завантаження
+function showLoadingIndicator(message) {
+    // Створюємо або оновлюємо індикатор завантаження
+    let loadingIndicator = document.getElementById('loadingIndicator');
+    
+    if (!loadingIndicator) {
+        loadingIndicator = document.createElement('div');
+        loadingIndicator.id = 'loadingIndicator';
+        loadingIndicator.className = 'loading-indicator';
+        loadingIndicator.innerHTML = `
+            <div class="loading-content">
+                <div class="spinner"></div>
+                <span class="loading-text">${message}</span>
+            </div>
+        `;
+        document.body.appendChild(loadingIndicator);
+    } else {
+        loadingIndicator.querySelector('.loading-text').textContent = message;
+    }
+    
+    loadingIndicator.style.display = 'flex';
+}
+
+// Функція для приховування індикатора завантаження
+function hideLoadingIndicator() {
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    if (loadingIndicator) {
+        loadingIndicator.style.display = 'none';
+    }
+}
+
+// Асинхронні обгортки для функцій (запускають в background)
+function viewGroupLogsAsync(groupName) {
+    // Запускаємо в background без блокування UI
+    setTimeout(() => viewGroupLogs(groupName), 0);
+}
+
+function editGroupAsync(groupName) {
+    // Запускаємо в background без блокування UI
+    setTimeout(() => editGroup(groupName), 0);
+}
+
+// Оновлюємо кнопки щоб використовувати асинхронні функції
+function updateGroupButtons() {
+    const buttons = document.querySelectorAll('.btn-info[onclick*="viewGroupLogs"]');
+    buttons.forEach(button => {
+        const groupName = button.getAttribute('onclick').match(/'([^']+)'/)[1];
+        button.setAttribute('onclick', `viewGroupLogsAsync('${groupName}')`);
+    });
+    
+    const editButtons = document.querySelectorAll('.btn-primary[onclick*="editGroup"]');
+    editButtons.forEach(button => {
+        const groupName = button.getAttribute('onclick').match(/'([^']+)'/)[1];
+        button.setAttribute('onclick', `editGroupAsync('${groupName}')`);
+    });
+}
+
+// Викликаємо оновлення кнопок після завантаження сторінки
+document.addEventListener('DOMContentLoaded', function() {
+    updateGroupButtons();
+});
+
+// Оновлюємо кнопки після оновлення списку груп
+function refreshGroupsList() {
+    // ... existing code ...
+    
+    // Після оновлення списку оновлюємо кнопки
+    setTimeout(updateGroupButtons, 100);
+}
+
+// Функція для оновлення реального статусу групи
+async function refreshGroupStatus(groupName) {
+    try {
+        const response = await fetch(`/api/shilling/groups/${encodeURIComponent(groupName)}/status`);
+        if (response.ok) {
+            const statusData = await response.json();
+            updateGroupStatusDisplay(groupName, statusData);
+        }
+    } catch (error) {
+        console.error('Помилка оновлення статусу проєкту:', error);
+    }
+}
+
+// Функція для оновлення відображення статусу групи
+function updateGroupStatusDisplay(groupName, statusData) {
+    const groupCard = document.querySelector(`[data-group-name="${groupName}"]`);
+    if (!groupCard) return;
+    
+    const statusElement = groupCard.querySelector('.group-status');
+    const toggleButton = groupCard.querySelector('.btn-sm');
+    
+    if (statusElement && toggleButton) {
+        const isRunning = statusData.is_running;
+        
+        // Оновлюємо статус
+        statusElement.className = `group-status ${isRunning ? 'status-running' : 'status-stopped'}`;
+        statusElement.innerHTML = `
+            <i class="fas fa-${isRunning ? 'play' : 'stop'}"></i>
+            ${isRunning ? 'Запущена' : 'Зупинена'}
+        `;
+        
+        // Оновлюємо кнопку
+        toggleButton.className = `btn btn-sm ${isRunning ? 'btn-warning' : 'btn-success'}`;
+        toggleButton.onclick = () => toggleGroup(groupName, isRunning);
+        toggleButton.innerHTML = `
+            <i class="fas fa-${isRunning ? 'pause' : 'play'}"></i>
+            ${isRunning ? 'Зупинити' : 'Запустити'}
+        `;
+        
+        // Оновлюємо клас картки
+        groupCard.className = `group-card ${isRunning ? 'running' : 'stopped'}`;
+    }
+}
+
+// Функція для періодичного оновлення статусу всіх груп
+function startStatusRefresh() {
+    // Оновлюємо статус кожні 30 секунд
+    setInterval(() => {
+        if (groupsData && groupsData.length > 0) {
+            groupsData.forEach(group => {
+                refreshGroupStatus(group.group_name);
+            });
+        }
+    }, 30000);
+}
+
+// Запускаємо оновлення статусу після завантаження сторінки
+document.addEventListener('DOMContentLoaded', function() {
+    updateGroupButtons();
+    
+    // Запускаємо періодичне оновлення статусу
+    setTimeout(startStatusRefresh, 5000);
+});
+</script>
+{% endblock %}

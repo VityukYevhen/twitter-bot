@@ -158,7 +158,7 @@ class Account:
         chrome_options.add_argument("--disable-extensions")
         chrome_options.add_argument("--disable-plugins")
         chrome_options.add_argument("--disable-images")
-        chrome_options.add_argument("--disable-javascript")
+        chrome_options.add_argument("--disable-quic")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
         
@@ -176,65 +176,68 @@ class Account:
         
 
         if self.proxy:
-            try:
-                # Підтримуємо різні формати проксі
-                proxy_parts = self.proxy.split(":")
-                
-                if len(proxy_parts) == 4:
-                    # Формат: address:port:username:password
-                    proxy_address = proxy_parts[0]
-                    proxy_port = proxy_parts[1]
-                    proxy_username = proxy_parts[2]
-                    proxy_password = proxy_parts[3]
-                elif len(proxy_parts) == 2 and "@" in self.proxy:
-                    # Формат: username:password@address:port
-                    auth_part, server_part = self.proxy.split("@")
-                    proxy_username, proxy_password = auth_part.split(":")
-                    proxy_address, proxy_port = server_part.split(":")
-                else:
-                    print(f"⚠️ Невідомий формат проксі: {self.proxy}")
-                    print("[INFO] Запуск без проксі")
-                    self.driver = webdriver.Chrome(options=chrome_options)
-                    return
-                
-                # formulate the proxy url with authentication
-                proxy_url = f"http://{proxy_username}:{proxy_password}@{proxy_address}:{proxy_port}"
-                
-                # set selenium-wire options to use the proxy with additional stability options
-                seleniumwire_options = {
-                    "proxy": {
-                        "http": proxy_url,
-                        "https": proxy_url
-                    },
-                    "connection_timeout": 30,
-                    "verify_ssl": False,
-                    "suppress_connection_errors": False
-                }
-                
-                print(f"[INFO] Використовується проксі: {proxy_address}:{proxy_port}")
-                self.driver = webdriver.Chrome(
-                    seleniumwire_options=seleniumwire_options,
-                    options=chrome_options,
-                )
-                
-                # Тестуємо підключення до проксі
-                try:
-                    self.driver.get("https://httpbin.org/ip")
-                    time.sleep(2)
-                    print("✅ Проксі підключення успішне")
-                except Exception as proxy_test_error:
-                    print(f"⚠️ Помилка тестування проксі: {proxy_test_error}")
-                    print("🔄 Перезапуск без проксі...")
-                    self.driver.quit()
-                    self.driver = webdriver.Chrome(options=chrome_options)
-                    
-            except Exception as proxy_error:
-                print(f"❌ Помилка налаштування проксі: {proxy_error}")
+    try:
+        # 🔧 Очистка рядка проксі: зрізати ; та пробіли в кінці
+        raw = re.sub(r'[;\s]+$', '', self.proxy.strip())
+
+        # Підтримка двох форматів:
+        # 1) address:port:username:password
+        # 2) username:password@address:port
+        if '@' in raw:
+            auth_part, server_part = raw.split('@', 1)
+            proxy_username, proxy_password = auth_part.split(':', 1)
+            proxy_address, proxy_port = server_part.split(':', 1)
+        else:
+            parts = raw.split(':')
+            if len(parts) == 4:
+                proxy_address, proxy_port, proxy_username, proxy_password = parts
+            else:
+                print(f"⚠️ Невідомий формат проксі: {self.proxy}")
                 print("[INFO] Запуск без проксі")
                 self.driver = webdriver.Chrome(options=chrome_options)
-        else:
-            print("[INFO] Запуск без проксі")
+                return
+
+        proxy_url = f"http://{proxy_username}:{proxy_password}@{proxy_address}:{proxy_port}"
+
+        # Selenium-Wire проксі з виключенням localhost (менше «шумних» логів)
+        seleniumwire_options = {
+            "proxy": {
+                "http": proxy_url,
+                "https": proxy_url,
+                "no_proxy": "localhost,127.0.0.1"
+            },
+            "connection_timeout": 30,
+            "verify_ssl": False,
+            "suppress_connection_errors": False
+        }
+
+        print(f"[INFO] Використовується проксі: {proxy_address}:{proxy_port}")
+        self.driver = webdriver.Chrome(
+            seleniumwire_options=seleniumwire_options,
+            options=chrome_options,
+        )
+
+        # Швидкий тест проксі
+        try:
+            self.driver.get("https://httpbin.org/ip")
+            time.sleep(2)
+            print("✅ Проксі підключення успішне")
+        except Exception as proxy_test_error:
+            print(f"⚠️ Помилка тестування проксі: {proxy_test_error}")
+            print("🔄 Перезапуск без проксі...")
+            try:
+                self.driver.quit()
+            except Exception:
+                pass
             self.driver = webdriver.Chrome(options=chrome_options)
+
+    except Exception as proxy_error:
+        print(f"❌ Помилка налаштування проксі: {proxy_error}")
+        print("[INFO] Запуск без проксі")
+        self.driver = webdriver.Chrome(options=chrome_options)
+else:
+    print("[INFO] Запуск без проксі")
+    self.driver = webdriver.Chrome(options=chrome_options)
         
         
         

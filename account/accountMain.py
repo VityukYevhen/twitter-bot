@@ -162,6 +162,11 @@ class Account:
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
         
+        # ... усередині __init__ після налаштування chrome_options
+        # Рекомендовано вимкнути зображення через prefs (а не прапорці)
+        prefs = {"profile.managed_default_content_settings.images": 2}
+        chrome_options.add_experimental_option("prefs", prefs)
+        
         # Linux-specific stability flags and unique profile directory
         self._temp_user_data_dir = None
         if platform.system() == 'Linux':
@@ -169,78 +174,71 @@ class Account:
             chrome_options.add_argument(f"--user-data-dir={self._temp_user_data_dir}")
             chrome_options.add_argument("--no-sandbox")
             chrome_options.add_argument("--disable-dev-shm-usage")
-            chrome_options.binary_location = '/usr/bin/google-chrome'
+            # якщо chrome в іншому місці — підбереться автоматично або fallback
+            chrome_bin = shutil.which("google-chrome") or shutil.which("google-chrome-stable") or "/usr/bin/google-chrome"
+            chrome_options.binary_location = chrome_bin
             chrome_options.add_argument("--disable-gpu")
             chrome_options.add_argument("--remote-debugging-port=0")
-            chrome_options.add_argument("--disable-dev-tools")
         
-
+        # --- ПРОКСІ: акуратні відступи та підтримка двох форматів ---
         if self.proxy:
-    try:
-        # 🔧 Очистка рядка проксі: зрізати ; та пробіли в кінці
-        raw = re.sub(r'[;\s]+$', '', self.proxy.strip())
-
-        # Підтримка двох форматів:
-        # 1) address:port:username:password
-        # 2) username:password@address:port
-        if '@' in raw:
-            auth_part, server_part = raw.split('@', 1)
-            proxy_username, proxy_password = auth_part.split(':', 1)
-            proxy_address, proxy_port = server_part.split(':', 1)
-        else:
-            parts = raw.split(':')
-            if len(parts) == 4:
-                proxy_address, proxy_port, proxy_username, proxy_password = parts
-            else:
-                print(f"⚠️ Невідомий формат проксі: {self.proxy}")
+            try:
+                raw = re.sub(r'[;\s]+$', '', self.proxy.strip())
+                if '@' in raw:
+                    auth_part, server_part = raw.split('@', 1)
+                    proxy_username, proxy_password = auth_part.split(':', 1)
+                    proxy_address, proxy_port = server_part.split(':', 1)
+                else:
+                    parts = raw.split(':')
+                    if len(parts) == 4:
+                        proxy_address, proxy_port, proxy_username, proxy_password = parts
+                    else:
+                        print(f"⚠️ Невідомий формат проксі: {self.proxy}")
+                        print("[INFO] Запуск без проксі")
+                        self.driver = webdriver.Chrome(options=chrome_options)
+                        self.driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+                        return
+        
+                proxy_url = f"http://{proxy_username}:{proxy_password}@{proxy_address}:{proxy_port}"
+                seleniumwire_options = {
+                    "proxy": {
+                        "http": proxy_url,
+                        "https": proxy_url,
+                        "no_proxy": "localhost,127.0.0.1"
+                    },
+                    "connection_timeout": 30,
+                    "verify_ssl": False,
+                    "suppress_connection_errors": False
+                }
+        
+                print(f"[INFO] Використовується проксі: {proxy_address}:{proxy_port}")
+                self.driver = webdriver.Chrome(
+                    seleniumwire_options=seleniumwire_options,
+                    options=chrome_options,
+                )
+        
+                try:
+                    self.driver.get("https://httpbin.org/ip")
+                    time.sleep(2)
+                    print("✅ Проксі підключення успішне")
+                except Exception as proxy_test_error:
+                    print(f"⚠️ Помилка тестування проксі: {proxy_test_error}")
+                    print("🔄 Перезапуск без проксі...")
+                    try:
+                        self.driver.quit()
+                    except Exception:
+                        pass
+                    self.driver = webdriver.Chrome(options=chrome_options)
+        
+            except Exception as proxy_error:
+                print(f"❌ Помилка налаштування проксі: {proxy_error}")
                 print("[INFO] Запуск без проксі")
                 self.driver = webdriver.Chrome(options=chrome_options)
-                return
-
-        proxy_url = f"http://{proxy_username}:{proxy_password}@{proxy_address}:{proxy_port}"
-
-        # Selenium-Wire проксі з виключенням localhost (менше «шумних» логів)
-        seleniumwire_options = {
-            "proxy": {
-                "http": proxy_url,
-                "https": proxy_url,
-                "no_proxy": "localhost,127.0.0.1"
-            },
-            "connection_timeout": 30,
-            "verify_ssl": False,
-            "suppress_connection_errors": False
-        }
-
-        print(f"[INFO] Використовується проксі: {proxy_address}:{proxy_port}")
-        self.driver = webdriver.Chrome(
-            seleniumwire_options=seleniumwire_options,
-            options=chrome_options,
-        )
-
-        # Швидкий тест проксі
-        try:
-            self.driver.get("https://httpbin.org/ip")
-            time.sleep(2)
-            print("✅ Проксі підключення успішне")
-        except Exception as proxy_test_error:
-            print(f"⚠️ Помилка тестування проксі: {proxy_test_error}")
-            print("🔄 Перезапуск без проксі...")
-            try:
-                self.driver.quit()
-            except Exception:
-                pass
+        else:
+            print("[INFO] Запуск без проксі")
             self.driver = webdriver.Chrome(options=chrome_options)
-
-    except Exception as proxy_error:
-        print(f"❌ Помилка налаштування проксі: {proxy_error}")
-        print("[INFO] Запуск без проксі")
-        self.driver = webdriver.Chrome(options=chrome_options)
-else:
-    print("[INFO] Запуск без проксі")
-    self.driver = webdriver.Chrome(options=chrome_options)
         
-        
-        
+        # Не намагайтесь знаходити елемент по outerHTML в інших місцях коду.
         self.driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
 
     async def add_image_to_post(self, images_folder):

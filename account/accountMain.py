@@ -1900,29 +1900,29 @@ class Account:
             return 0.0
     
     def is_post_within_hours(self, post, search_hours: float) -> bool:
-    """
-    Перевіряє чи пост не старіший за вказану кількість годин
-
-    Args:
-        post: WebElement поста
-        search_hours: Максимальна кількість годин для пошуку
-
-    Returns:
-        bool: True якщо пост в межах годин, False якщо старіший
-    """
-    try:
-        hours_ago = self.get_post_time(post)  # тепер get_post_time повертає лише число
-        if hours_ago == 0.0:
-            return True  # якщо час не зчитали – не блокуємо
-        if hours_ago <= float(search_hours):
-            print(f"✅ Пост опубліковано {hours_ago:.1f} годин тому (в межах {search_hours} годин)")
-            return True
-        else:
-            print(f"⏰ Пост опубліковано {hours_ago:.1f} годин тому (старіший за {search_hours} годин)")
-            return False
-    except Exception as e:
-        print(f"❌ Помилка при перевірці часу поста: {e}")
-        return True  # якщо помилка, пропускаємо перевірку
+        """
+        Перевіряє чи пост не старіший за вказану кількість годин
+    
+        Args:
+            post: WebElement поста
+            search_hours: Максимальна кількість годин для пошуку
+    
+        Returns:
+            bool: True якщо пост в межах годин, False якщо старіший
+        """
+        try:
+            hours_ago = self.get_post_time(post)  # тепер get_post_time повертає лише число
+            if hours_ago == 0.0:
+                return True  # якщо час не зчитали – не блокуємо
+            if hours_ago <= float(search_hours):
+                print(f"✅ Пост опубліковано {hours_ago:.1f} годин тому (в межах {search_hours} годин)")
+                return True
+            else:
+                print(f"⏰ Пост опубліковано {hours_ago:.1f} годин тому (старіший за {search_hours} годин)")
+                return False
+        except Exception as e:
+            print(f"❌ Помилка при перевірці часу поста: {e}")
+            return True  # якщо помилка, пропускаємо перевірку
     
     def contains_search_keywords(self, post, search_keywords):
         """

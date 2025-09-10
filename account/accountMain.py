@@ -284,12 +284,13 @@ class Account:
             except Exception as file_error:
                 print(f"❌ Помилка при додаванні картинки: {file_error}")
                 # Видаляємо файл навіть якщо не вдалося додати
-                await delete_image_by_name(filename)
+                if filename:
+                    try:
+                        await delete_image_by_name(filename)
+                        print(f"🗑 Тимчасовий файл {filename} видалено після помилки")
+                    except Exception as del_error:
+                        print(f"⚠️ Не вдалося видалити {filename}: {del_error}")
                 return False
-                
-        except Exception as e:
-            print(f"❌ Помилка при роботі з картинкою: {e}")
-            return False
 
     async def handle_click_intercepted(self, element, max_retries=4):
         """
@@ -342,7 +343,7 @@ class Account:
                     print("🔄 Перезавантажуємо сторінку...")
                     self.driver.refresh()
                     await asyncio.sleep(3)
-                    await self.open_explore()
+                    return False  # викликаючий код сам знайде елемент заново
                     
                     try:
                         current_url = self.driver.current_url
@@ -902,7 +903,7 @@ class Account:
         last_processed_index = 0
         no_posts_count = 0
         
-        self.open_explore()
+        await self.open_explore()
         await asyncio.sleep(random.uniform(1, 3))
 
         while commented_posts < amount_of_comments:
@@ -1520,11 +1521,12 @@ class Account:
                     print(f"📝 Лог додано: {href}")
                 except Exception as log_error:
                     print(f"❌ Помилка при логуванні посту: {log_error}")
+            if filename:  # перевіряємо, що файл існує
                 try:
                     await delete_image_by_name(filename)
                     print(f"🗑️ Тимчасовий файл {filename} видалено")
                 except Exception as e:
-                    print("не вдалося видалити картинку, її не існує чи сталась помилка")
+                    print(f"⚠️ Не вдалося видалити {filename}: {e}")
             else:
                 print("❌ Не вдалося клікнути на кнопку відправки твіту")
                 return
@@ -1657,7 +1659,7 @@ class Account:
         last_processed_index = 0
         no_posts_count = 0
 
-        self.open_explore_shilling(main_words)
+        await self.open_explore_shilling(main_words)
         await asyncio.sleep(random.uniform(1, 3))
 
 
@@ -1805,6 +1807,7 @@ class Account:
                                     print(f"[ERROR] Could not find element {e}")
 
                                 await asyncio.sleep(random.uniform(3, 5))
+                            if filename:  # перевіряємо, чи є файл
                                 try:
                                     await delete_image_by_name(filename)
                                     print(f"🗑️ Тимчасовий файл {filename} видалено")
@@ -1854,92 +1857,71 @@ class Account:
                 await asyncio.sleep(random.uniform(2, 4))
         
         print(f"Завершено! Додано {commented_posts} коментарів")
+    
+    def get_post_time(self, post) -> float:
+    """
+    Повертає, скільки годин тому опубліковано пост.
+    Якщо час не вдалося визначити → 0.0
+    """
 
-    async def check_time(post):
-        post.find_element(By.CSS_SELECTOR, '')
-    
-    def get_post_time(self, post):
-        """
-        Отримує час публікації поста та перевіряє чи він не старіший за search_hours
-        
-        Args:
-            post: WebElement поста
-            
-        Returns:
-            tuple: (is_within_hours, hours_ago) - чи пост в межах годин та скільки годин тому
-        """
+    # ✅ Список можливих CSS-селекторів для пошуку часу публікації
+    selectors = [
+        'time[datetime]',
+        'a[href*="/status/"] time',
+        'div[data-testid="tweetText"] ~ div time'
+    ]
+
+    time_el = None  # змінна для знайденого елемента часу
+
+    # ✅ Перебираємо селектори один за одним
+    for sel in selectors:
         try:
-            # Шукаємо елемент з часом публікації
-            time_selectors = [
-                'time[datetime]',
-                'a[href*="/status/"] time',
-                'span[data-testid="tweetText"] + div time',
-                'div[data-testid="tweetText"] + div time'
-            ]
-            
-            post_time_element = None
-            for selector in time_selectors:
-                try:
-                    post_time_element = post.find_element(By.CSS_SELECTOR, selector)
-                    if post_time_element:
-                        break
-                except:
-                    continue
-            
-            if not post_time_element:
-                print("⚠️ Не вдалося знайти елемент часу поста")
-                return True, 0  # Якщо не можемо визначити час, пропускаємо перевірку
-            
-            # Отримуємо datetime атрибут
-            datetime_attr = post_time_element.get_attribute('datetime')
-            if not datetime_attr:
-                print("⚠️ Не вдалося отримати datetime атрибут")
-                return True, 0
-            
-            # Парсимо час публікації
-            from datetime import datetime, timezone
-            try:
-                post_datetime = datetime.fromisoformat(datetime_attr.replace('Z', '+00:00'))
-                current_time = datetime.now(timezone.utc)
-                
-                # Розраховуємо різницю в годинах
-                time_diff = current_time - post_datetime
-                hours_ago = time_diff.total_seconds() / 3600
-                
-                return hours_ago, hours_ago
-                
-            except Exception as e:
-                print(f"⚠️ Помилка парсингу часу: {e}")
-                return True, 0
-                
-        except Exception as e:
-            print(f"❌ Помилка при отриманні часу поста: {e}")
-            return True, 0
+            time_el = post.find_element(By.CSS_SELECTOR, sel)
+            if time_el:
+                break
+        except Exception:
+            continue
+
+    if not time_el:
+        return 0.0  # якщо не знайшли час
+
+    # ✅ Беремо значення атрибута datetime
+    dt_attr = time_el.get_attribute("datetime")
+    if not dt_attr:
+        return 0.0
+
+    try:
+        post_dt = datetime.fromisoformat(dt_attr.replace("Z", "+00:00"))
+        now = datetime.now(timezone.utc)
+        return (now - post_dt).total_seconds() / 3600.0  # різниця в годинах
+    except Exception as e:
+        print(f"⚠️ Помилка парсингу часу: {e}")
+        return 0.0
     
-    def is_post_within_hours(self, post, search_hours):
-        """
-        Перевіряє чи пост не старіший за вказану кількість годин
-        
-        Args:
-            post: WebElement поста
-            search_hours: Максимальна кількість годин для пошуку
-            
-        Returns:
-            bool: True якщо пост в межах годин, False якщо старіший
-        """
-        try:
-            hours_ago, _ = self.get_post_time(post)
-            
-            if hours_ago <= search_hours:
-                print(f"✅ Пост опубліковано {hours_ago:.1f} годин тому (в межах {search_hours} годин)")
-                return True
-            else:
-                print(f"⏰ Пост опубліковано {hours_ago:.1f} годин тому (старіший за {search_hours} годин)")
-                return False
-                
-        except Exception as e:
-            print(f"❌ Помилка при перевірці часу поста: {e}")
-            return True  # Якщо помилка, пропускаємо перевірку
+    def is_post_within_hours(self, post, search_hours: float) -> bool:
+    """
+    Перевіряє чи пост не старіший за вказану кількість годин
+
+    Args:
+        post: WebElement поста
+        search_hours: Максимальна кількість годин для пошуку
+
+    Returns:
+        bool: True якщо пост в межах годин, False якщо старіший
+    """
+    try:
+        hours_ago = self.get_post_time(post)  # тепер get_post_time повертає лише число
+        if hours_ago == 0.0:
+            return True  # якщо час не зчитали – не блокуємо
+        if hours_ago <= float(search_hours):
+            print(f"✅ Пост опубліковано {hours_ago:.1f} годин тому (в межах {search_hours} годин)")
+            return True
+        else:
+            print(f"⏰ Пост опубліковано {hours_ago:.1f} годин тому (старіший за {search_hours} годин)")
+            return False
+    except Exception as e:
+        print(f"❌ Помилка при перевірці часу поста: {e}")
+        return True  # якщо помилка, пропускаємо перевірку
     
     def contains_search_keywords(self, post, search_keywords):
         """
@@ -1982,31 +1964,6 @@ class Account:
                 
         except Exception as e:
             print(f"❌ Помилка при перевірці ключових слів: {e}")
-            return True  # Якщо помилка, пропускаємо перевірку
-
-    def is_post_within_hours(self, post, search_hours):
-        """
-        Перевіряє чи пост не старіший за вказану кількість годин
-        
-        Args:
-            post: WebElement поста
-            search_hours: Максимальна кількість годин для пошуку
-            
-        Returns:
-            bool: True якщо пост в межах годин, False якщо старіший
-        """
-        try:
-            hours_ago, _ = self.get_post_time(post)
-            
-            if hours_ago <= search_hours:
-                print(f"✅ Пост опубліковано {hours_ago:.1f} годин тому (в межах {search_hours} годин)")
-                return True
-            else:
-                print(f"⏰ Пост опубліковано {hours_ago:.1f} годин тому (старіший за {search_hours} годин)")
-                return False
-                
-        except Exception as e:
-            print(f"❌ Помилка при перевірці часу поста: {e}")
             return True  # Якщо помилка, пропускаємо перевірку
     
     async def big_action_shilling(self, actions_count, settings, logs_table, main_words, search_hours=24, is_images=False, images_folder=""):
@@ -2429,8 +2386,8 @@ class Account:
                 try:
                     await delete_image_by_name(filename)
                     print(f"🗑️ Тимчасовий файл {filename} видалено")
-                except:
-                    pass
+                except Exception as e:
+                    print(f"⚠️ Не вдалося видалити {filename}: {e}")
             
             # Логуємо дію
             try:
@@ -2525,12 +2482,12 @@ class Account:
                 retweet_link = "https://x.com"
             
             # Видаляємо тимчасову картинку
-            if filename:
+            if filename:  # перевіряємо, чи є файл
                 try:
                     await delete_image_by_name(filename)
                     print(f"🗑️ Тимчасовий файл {filename} видалено")
-                except:
-                    pass
+                except Exception as e:
+                    print(f"⚠️ Не вдалося видалити {filename}: {e}")
             
             # Логуємо дію
             try:
@@ -2609,12 +2566,12 @@ class Account:
                 own_post_link = "https://x.com"
             
             # Видаляємо тимчасову картинку
-            if filename:
+            if filename:  # перевіряємо, чи є файл
                 try:
                     await delete_image_by_name(filename)
                     print(f"🗑️ Тимчасовий файл {filename} видалено")
-                except:
-                    pass
+                except Exception as e:
+                    print(f"⚠️ Не вдалося видалити {filename}: {e}")
             
             # Логуємо дію
             try:

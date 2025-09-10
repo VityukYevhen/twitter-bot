@@ -1753,7 +1753,6 @@ class Account:
                                     print("Кнопка коментування не клікабельна")
                                     continue
                             except Exception as e:
-                                print(f"")
                                 continue
                             
                             await asyncio.sleep(random.uniform(min_time, max_time))

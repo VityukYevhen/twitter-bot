@@ -291,6 +291,9 @@ class Account:
                     except Exception as del_error:
                         print(f"⚠️ Не вдалося видалити {filename}: {del_error}")
                 return False
+        except Exception as main_error:
+            print(f"❌ Помилка на головному рівні: {main_error}")
+            return False
     async def handle_click_intercepted(self, element, max_retries=4):
         """
         Обробляє помилку 'element click intercepted' 

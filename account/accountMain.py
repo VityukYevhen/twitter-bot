@@ -1860,44 +1860,44 @@ class Account:
         print(f"Завершено! Додано {commented_posts} коментарів")
     
     def get_post_time(self, post) -> float:
-    """
-    Повертає, скільки годин тому опубліковано пост.
-    Якщо час не вдалося визначити → 0.0
-    """
+        """
+        Повертає, скільки годин тому опубліковано пост.
+        Якщо час не вдалося визначити → 0.0
+        """
+    
+        # ✅ Список можливих CSS-селекторів для пошуку часу публікації
+        selectors = [
+            'time[datetime]',
+            'a[href*="/status/"] time',
+            'div[data-testid="tweetText"] ~ div time'
+        ]
+    
+        time_el = None  # змінна для знайденого елемента часу
+    
+        # ✅ Перебираємо селектори один за одним
+        for sel in selectors:
+            try:
+                time_el = post.find_element(By.CSS_SELECTOR, sel)
+                if time_el:
+                    break
+            except Exception:
+                continue
+    
+        if not time_el:
+            return 0.0  # якщо не знайшли час
+    
+        # ✅ Беремо значення атрибута datetime
+        dt_attr = time_el.get_attribute("datetime")
+        if not dt_attr:
+            return 0.0
 
-    # ✅ Список можливих CSS-селекторів для пошуку часу публікації
-    selectors = [
-        'time[datetime]',
-        'a[href*="/status/"] time',
-        'div[data-testid="tweetText"] ~ div time'
-    ]
-
-    time_el = None  # змінна для знайденого елемента часу
-
-    # ✅ Перебираємо селектори один за одним
-    for sel in selectors:
         try:
-            time_el = post.find_element(By.CSS_SELECTOR, sel)
-            if time_el:
-                break
-        except Exception:
-            continue
-
-    if not time_el:
-        return 0.0  # якщо не знайшли час
-
-    # ✅ Беремо значення атрибута datetime
-    dt_attr = time_el.get_attribute("datetime")
-    if not dt_attr:
-        return 0.0
-
-    try:
-        post_dt = datetime.fromisoformat(dt_attr.replace("Z", "+00:00"))
-        now = datetime.now(timezone.utc)
-        return (now - post_dt).total_seconds() / 3600.0  # різниця в годинах
-    except Exception as e:
-        print(f"⚠️ Помилка парсингу часу: {e}")
-        return 0.0
+            post_dt = datetime.fromisoformat(dt_attr.replace("Z", "+00:00"))
+            now = datetime.now(timezone.utc)
+            return (now - post_dt).total_seconds() / 3600.0  # різниця в годинах
+        except Exception as e:
+            print(f"⚠️ Помилка парсингу часу: {e}")
+            return 0.0
     
     def is_post_within_hours(self, post, search_hours: float) -> bool:
     """
